@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>技術士一次試験 学習トラッカー</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f11;
+  --surface: #18181c;
+  --surface2: #1f1f25;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #f0f0f0;
+  --muted: #888;
+  --dimmed: #555;
+  --accent: #6ee7b7;
+  --accent2: #60a5fa;
+  --accent3: #f59e0b;
+  --accent4: #f87171;
+  --accent-dim: rgba(110,231,183,0.12);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Noto Sans JP', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; font-size: 14px; line-height: 1.6; }
+
+/* layout */
+.app { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+.sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 24px 0; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.main { padding: 28px 32px; overflow-y: auto; }
+
+/* sidebar */
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.logo-title { font-size: 13px; font-weight: 700; letter-spacing: 0.05em; color: var(--accent); }
+.logo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.nav-section { padding: 0 12px; margin-bottom: 4px; }
+.nav-label { font-size: 10px; color: var(--dimmed); letter-spacing: 0.1em; padding: 0 8px; margin-bottom: 4px; }
+.nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border-radius: var(--radius-sm); background: none; border: none; color: var(--muted); font-family: var(--sans); font-size: 13px; cursor: pointer; text-align: left; transition: all 0.15s; }
+.nav-btn:hover { background: var(--surface2); color: var(--text); }
+.nav-btn.active { background: var(--accent-dim); color: var(--accent); }
+.nav-icon { width: 16px; text-align: center; font-size: 14px; }
+.sidebar-footer { margin-top: auto; padding: 16px 20px 0; border-top: 1px solid var(--border); }
+.exam-countdown { text-align: center; }
+.countdown-days { font-family: var(--mono); font-size: 36px; font-weight: 500; color: var(--accent); line-height: 1; }
+.countdown-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.countdown-date { font-size: 10px; color: var(--dimmed); margin-top: 2px; font-family: var(--mono); }
+
+/* pages */
+.page { display: none; }
+.page.active { display: block; }
+.page-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.page-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+/* cards */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+.card-sm { padding: 14px 16px; }
+.card-label { font-size: 11px; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 6px; }
+.card-value { font-size: 26px; font-weight: 700; font-family: var(--mono); }
+.card-sub-value { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+/* progress bar */
+.prog-wrap { background: rgba(255,255,255,0.06); border-radius: 99px; height: 6px; overflow: hidden; margin-top: 8px; }
+.prog-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+.prog-green { background: var(--accent); }
+.prog-blue { background: var(--accent2); }
+.prog-amber { background: var(--accent3); }
+.prog-red { background: var(--accent4); }
+
+/* badge */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 10px; border-radius: 99px; font-weight: 500; }
+.badge-green { background: rgba(110,231,183,0.15); color: var(--accent); }
+.badge-blue { background: rgba(96,165,250,0.15); color: var(--accent2); }
+.badge-amber { background: rgba(245,158,11,0.15); color: var(--accent3); }
+.badge-red { background: rgba(248,113,113,0.15); color: var(--accent4); }
+.badge-gray { background: rgba(255,255,255,0.08); color: var(--muted); }
+
+/* today task */
+.today-card { background: linear-gradient(135deg, rgba(110,231,183,0.08), rgba(96,165,250,0.06)); border: 1px solid rgba(110,231,183,0.2); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+.today-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.today-title { font-size: 15px; font-weight: 700; }
+.today-phase { font-size: 11px; color: var(--accent); font-family: var(--mono); }
+.task-list { display: flex; flex-direction: column; gap: 10px; }
+.task-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); border: 1px solid var(--border); cursor: pointer; transition: all 0.15s; }
+.task-item:hover { border-color: var(--border2); }
+.task-item.done { opacity: 0.5; }
+.task-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border2); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 10px; transition: all 0.15s; }
+.task-item.done .task-check { background: var(--accent); border-color: var(--accent); color: #000; }
+.task-content { flex: 1; }
+.task-name { font-size: 13px; font-weight: 500; }
+.task-item.done .task-name { text-decoration: line-through; color: var(--muted); }
+.task-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.task-time { font-size: 11px; color: var(--dimmed); font-family: var(--mono); }
+
+/* log study */
+.log-btn { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: var(--radius-sm); border: 1px solid var(--accent); background: var(--accent-dim); color: var(--accent); font-family: var(--sans); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+.log-btn:hover { background: rgba(110,231,183,0.2); }
+.btn-gray { border-color: var(--border2); background: var(--surface2); color: var(--text); }
+.btn-gray:hover { background: rgba(255,255,255,0.08); }
+
+/* section title */
+.section-title { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 12px; margin-top: 24px; text-transform: uppercase; }
+
+/* phase list */
+.phase-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; }
+.phase-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.phase-info { flex: 1; }
+.phase-name { font-size: 13px; font-weight: 500; }
+.phase-weeks { font-size: 11px; color: var(--muted); }
+.phase-status { font-size: 11px; }
+
+/* subject table */
+.subject-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; }
+.subject-header-row { display: grid; grid-template-columns: 1fr 80px 80px 100px; gap: 0; padding: 10px 16px; background: var(--surface2); border-bottom: 1px solid var(--border); font-size: 11px; color: var(--dimmed); letter-spacing: 0.05em; }
+.subject-row { display: grid; grid-template-columns: 1fr 80px 80px 100px; gap: 0; padding: 14px 16px; border-bottom: 1px solid var(--border); align-items: center; cursor: pointer; transition: background 0.1s; }
+.subject-row:last-child { border-bottom: none; }
+.subject-row:hover { background: var(--surface2); }
+.subject-name { font-size: 13px; font-weight: 500; }
+.subject-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.subject-pct { font-family: var(--mono); font-size: 14px; font-weight: 500; }
+.subject-star { color: var(--accent3); font-size: 12px; }
+
+/* log history */
+.log-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.log-row:last-child { border-bottom: none; }
+.log-date { font-family: var(--mono); color: var(--muted); width: 80px; flex-shrink: 0; }
+.log-subject { flex: 1; }
+.log-mins { font-family: var(--mono); color: var(--accent); width: 50px; text-align: right; }
+.log-del { color: var(--dimmed); cursor: pointer; padding: 2px 6px; border-radius: 4px; background: none; border: none; font-size: 13px; }
+.log-del:hover { background: rgba(248,113,113,0.15); color: var(--accent4); }
+
+/* modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 24px; width: 360px; }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; }
+.form-select, .form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text); font-family: var(--sans); font-size: 13px; padding: 9px 12px; }
+.form-select:focus, .form-input:focus { outline: none; border-color: var(--accent); }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+
+/* week calendar */
+.week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 16px; }
+.week-cell { aspect-ratio: 1; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-family: var(--mono); border: 1px solid var(--border); background: var(--surface); color: var(--muted); position: relative; cursor: pointer; transition: all 0.1s; }
+.week-cell.studied { background: rgba(110,231,183,0.15); border-color: rgba(110,231,183,0.3); color: var(--accent); }
+.week-cell.today { border-color: var(--accent2); color: var(--accent2); }
+.week-cell.future { opacity: 0.35; cursor: default; }
+.week-day-labels { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 6px; }
+.week-day-label { text-align: center; font-size: 10px; color: var(--dimmed); }
+
+/* tip box */
+.tip { background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 12px; color: #93c5fd; line-height: 1.7; margin-bottom: 12px; }
+.warn { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 12px; color: #fbbf24; line-height: 1.7; margin-bottom: 12px; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.page.active { animation: fadeIn 0.2s ease; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-title">技術士 一次試験</div>
+    <div class="logo-sub">建設部門｜2026年度</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">MENU</div>
+    <button class="nav-btn active" onclick="showPage('dashboard')"><span class="nav-icon">⬛</span>ダッシュボード</button>
+    <button class="nav-btn" onclick="showPage('today')"><span class="nav-icon">▶</span>今日やること</button>
+    <button class="nav-btn" onclick="showPage('subjects')"><span class="nav-icon">◎</span>科目別進捗</button>
+    <button class="nav-btn" onclick="showPage('plan')"><span class="nav-icon">≡</span>学習計画</button>
+    <button class="nav-btn" onclick="showPage('log')"><span class="nav-icon">◈</span>学習ログ</button>
+  </div>
+  <div class="sidebar-footer">
+    <div class="exam-countdown">
+      <div class="countdown-days" id="countdown-days">—</div>
+      <div class="countdown-label">試験まで（日）</div>
+      <div class="countdown-date">2026.11.22 Sun</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-title">ダッシュボード</div>
+    <div class="page-sub" id="dash-date">今日の状況を確認しよう</div>
+
+    <div class="grid-3">
+      <div class="card card-sm">
+        <div class="card-label">総学習時間</div>
+        <div class="card-value" id="total-hours">0h</div>
+        <div class="prog-wrap"><div class="prog-fill prog-green" id="prog-total" style="width:0%"></div></div>
+        <div class="card-sub-value">目標 150h</div>
+      </div>
+      <div class="card card-sm">
+        <div class="card-label">今週の学習日数</div>
+        <div class="card-value" id="week-days">0日</div>
+        <div class="prog-wrap"><div class="prog-fill prog-blue" id="prog-week" style="width:0%"></div></div>
+        <div class="card-sub-value">目標 5日/週</div>
+      </div>
+      <div class="card card-sm">
+        <div class="card-label">連続学習</div>
+        <div class="card-value" id="streak-days">0日</div>
+        <div class="card-sub-value">🔥 継続中</div>
+      </div>
+    </div>
+
+    <div class="today-card">
+      <div class="today-header">
+        <div>
+          <div class="today-title" id="today-task-title">今日のタスク</div>
+          <div class="today-phase" id="today-phase-label">— </div>
+        </div>
+        <button class="log-btn" onclick="openModal()">＋ 学習を記録</button>
+      </div>
+      <div class="task-list" id="today-tasks"></div>
+    </div>
+
+    <div class="section-title">直近30日 カレンダー</div>
+    <div class="card">
+      <div class="week-day-labels">
+        <div class="week-day-label">日</div><div class="week-day-label">月</div><div class="week-day-label">火</div>
+        <div class="week-day-label">水</div><div class="week-day-label">木</div><div class="week-day-label">金</div><div class="week-day-label">土</div>
+      </div>
+      <div class="week-grid" id="calendar-grid"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card card-sm">
+        <div class="card-label">適性科目</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
+          <div class="card-value" style="font-size:20px" id="dash-tekisei">0%</div>
+          <div class="badge badge-green">文系最強</div>
+        </div>
+        <div class="prog-wrap"><div class="prog-fill prog-green" id="prog-tekisei" style="width:0%"></div></div>
+      </div>
+      <div class="card card-sm">
+        <div class="card-label">基礎科目</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
+          <div class="card-value" style="font-size:20px" id="dash-kiso">0%</div>
+          <div class="badge badge-amber">選択攻略</div>
+        </div>
+        <div class="prog-wrap"><div class="prog-fill prog-amber" id="prog-kiso" style="width:0%"></div></div>
+      </div>
+      <div class="card card-sm">
+        <div class="card-label">専門科目（建設）</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
+          <div class="card-value" style="font-size:20px" id="dash-senmon">0%</div>
+          <div class="badge badge-red">最重要</div>
+        </div>
+        <div class="prog-wrap"><div class="prog-fill prog-red" id="prog-senmon" style="width:0%"></div></div>
+      </div>
+      <div class="card card-sm">
+        <div class="card-label">模擬試験</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
+          <div class="card-value" style="font-size:20px" id="dash-mogi">0回</div>
+          <div class="badge badge-blue">目標3回</div>
+        </div>
+        <div class="prog-wrap"><div class="prog-fill prog-blue" id="prog-mogi" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TODAY -->
+  <div class="page" id="page-today">
+    <div class="page-title">今日やること</div>
+    <div class="page-sub" id="today-date-label">本日のタスクと学習内容</div>
+
+    <div id="today-phase-info" class="tip"></div>
+
+    <div class="today-card">
+      <div class="today-header">
+        <div class="today-title">本日のタスク</div>
+        <button class="log-btn" onclick="openModal()">＋ 記録する</button>
+      </div>
+      <div class="task-list" id="today-tasks-2"></div>
+    </div>
+
+    <div class="section-title">今週の達成状況</div>
+    <div class="card">
+      <div id="week-summary"></div>
+    </div>
+
+    <div class="section-title">合格のための最低ライン</div>
+    <div class="card" style="font-size:13px;line-height:2;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div>
+          <div style="color:var(--muted);font-size:11px;margin-bottom:4px;">適性科目</div>
+          <div style="font-family:var(--mono);font-size:20px;color:var(--accent);">15問中<br><span style="font-size:28px;">8</span>問</div>
+        </div>
+        <div>
+          <div style="color:var(--muted);font-size:11px;margin-bottom:4px;">基礎科目</div>
+          <div style="font-family:var(--mono);font-size:20px;color:var(--accent3);">15問中<br><span style="font-size:28px;">8</span>問</div>
+        </div>
+        <div>
+          <div style="color:var(--muted);font-size:11px;margin-bottom:4px;">専門科目（建設）</div>
+          <div style="font-family:var(--mono);font-size:20px;color:var(--accent4);">25問中<br><span style="font-size:28px;">13</span>問</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBJECTS -->
+  <div class="page" id="page-subjects">
+    <div class="page-title">科目別進捗</div>
+    <div class="page-sub">各科目の学習完成度を更新できます</div>
+
+    <div class="tip">過去問の正答率を目安に進捗を入力してください。合格ラインは50%。捨て問を作る勇気も大事！</div>
+
+    <div class="subject-card">
+      <div class="subject-header-row">
+        <div>科目</div>
+        <div>完成度</div>
+        <div>難易度</div>
+        <div>状態</div>
+      </div>
+
+      <div class="subject-row" onclick="editSubject(0)">
+        <div>
+          <div class="subject-name">適性科目</div>
+          <div class="subject-desc">技術者倫理・法令・リスク管理</div>
+        </div>
+        <div class="subject-pct" id="s-pct-0" style="color:var(--accent)">0%</div>
+        <div class="subject-star">★☆☆</div>
+        <div id="s-badge-0"><span class="badge badge-gray">未着手</span></div>
+      </div>
+      <div class="subject-row" onclick="editSubject(1)">
+        <div>
+          <div class="subject-name">基礎科目 — 環境・エネルギー群</div>
+          <div class="subject-desc">5群中 最も文系向き</div>
+        </div>
+        <div class="subject-pct" id="s-pct-1" style="color:var(--accent3)">0%</div>
+        <div class="subject-star">★☆☆</div>
+        <div id="s-badge-1"><span class="badge badge-gray">未着手</span></div>
+      </div>
+      <div class="subject-row" onclick="editSubject(2)">
+        <div>
+          <div class="subject-name">基礎科目 — 材料・化学群</div>
+          <div class="subject-desc">暗記系が多い</div>
+        </div>
+        <div class="subject-pct" id="s-pct-2" style="color:var(--accent3)">0%</div>
+        <div class="subject-star">★★☆</div>
+        <div id="s-badge-2"><span class="badge badge-gray">未着手</span></div>
+      </div>
+      <div class="subject-row" onclick="editSubject(3)">
+        <div>
+          <div class="subject-name">基礎科目 — 情報・論理群</div>
+          <div class="subject-desc">パターンで解ける</div>
+        </div>
+        <div class="subject-pct" id="s-pct-3" style="color:var(--accent3)">0%</div>
+        <div class="subject-star">★★☆</div>
+        <div id="s-badge-3"><span class="badge badge-gray">未着手</span></div>
+      </div>
+      <div class="subject-row" onclick="editSubject(4)">
+        <div>
+          <div class="subject-name">専門科目（建設部門）— 土質・基礎</div>
+          <div class="subject-desc">頻出・過去問パターン多め</div>
+        </div>
+        <div class="subject-pct" id="s-pct-4" style="color:var(--accent4)">0%</div>
+        <div class="subject-star">★★★</div>
+        <div id="s-badge-4"><span class="badge badge-gray">未着手</span></div>
+      </div>
+      <div class="subject-row" onclick="editSubject(5)">
+        <div>
+          <div class="subject-name">専門科目（建設部門）— 道路・橋梁</div>
+          <div class="subject-desc">実務経験が活きる分野</div>
+        </div>
+        <div class="subject-pct" id="s-pct-5" style="color:var(--accent4)">0%</div>
+        <div class="subject-star">★★★</div>
+        <div id="s-badge-5"><span class="badge badge-gray">未着手</span></div>
+      </div>
+      <div class="subject-row" onclick="editSubject(6)">
+        <div>
+          <div class="subject-name">専門科目（建設部門）— 河川・水文</div>
+          <div class="subject-desc">計算多め・公式暗記で対応</div>
+        </div>
+        <div class="subject-pct" id="s-pct-6" style="color:var(--accent4)">0%</div>
+        <div class="subject-star">★★★</div>
+        <div id="s-badge-6"><span class="badge badge-gray">未着手</span></div>
+      </div>
+      <div class="subject-row" onclick="editSubject(7)">
+        <div>
+          <div class="subject-name">専門科目（建設部門）— 都市計画・施工</div>
+          <div class="subject-desc">法令・計画系が多い</div>
+        </div>
+        <div class="subject-pct" id="s-pct-7" style="color:var(--accent4)">0%</div>
+        <div class="subject-star">★★☆</div>
+        <div id="s-badge-7"><span class="badge badge-gray">未着手</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAN -->
+  <div class="page" id="page-plan">
+    <div class="page-title">学習計画</div>
+    <div class="page-sub">7月〜11月22日（試験日）の全体スケジュール</div>
+
+    <div class="warn">📅 受験申込締切：2026年6月24日（水）WEB：6月23日17:00まで。まだなら今すぐ申込を！</div>
+
+    <div class="section-title">フェーズ概要</div>
+    <div class="phase-row">
+      <div class="phase-dot" style="background:var(--accent)"></div>
+      <div class="phase-info">
+        <div class="phase-name">Phase 1 — 準備・全体把握</div>
+        <div class="phase-weeks">7月1日〜7月31日（4週間）</div>
+      </div>
+      <div id="phase-status-0" class="phase-status"><span class="badge badge-gray">未開始</span></div>
+    </div>
+    <div class="phase-row">
+      <div class="phase-dot" style="background:var(--accent2)"></div>
+      <div class="phase-info">
+        <div class="phase-name">Phase 2 — 科目別 過去問演習</div>
+        <div class="phase-weeks">8月1日〜10月15日（10週間）</div>
+      </div>
+      <div id="phase-status-1" class="phase-status"><span class="badge badge-gray">未開始</span></div>
+    </div>
+    <div class="phase-row">
+      <div class="phase-dot" style="background:var(--accent3)"></div>
+      <div class="phase-info">
+        <div class="phase-name">Phase 3 — 弱点強化・模擬試験</div>
+        <div class="phase-weeks">10月16日〜11月15日（4週間）</div>
+      </div>
+      <div id="phase-status-2" class="phase-status"><span class="badge badge-gray">未開始</span></div>
+    </div>
+    <div class="phase-row">
+      <div class="phase-dot" style="background:var(--accent4)"></div>
+      <div class="phase-info">
+        <div class="phase-name">Phase 4 — 直前 仕上げ</div>
+        <div class="phase-weeks">11月16日〜11月21日（1週間）</div>
+      </div>
+      <div id="phase-status-3" class="phase-status"><span class="badge badge-gray">未開始</span></div>
+    </div>
+
+    <div class="section-title">フェーズ別 詳細タスク</div>
+    <div class="card" style="font-size:13px;line-height:1.9;">
+      <div style="margin-bottom:16px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">Phase 1（7月）— 全体把握・診断</div>
+        <div style="color:var(--muted);">・過去問1年分を解いて自分の実力と弱点を把握（答え見てOK）</div>
+        <div style="color:var(--muted);">・適性科目の過去問3年分を一周（倫理感覚を養う）</div>
+        <div style="color:var(--muted);">・専門科目（建設）の参考書をサラッと通読</div>
+        <div style="color:var(--muted);">・基礎科目の5群を確認し、捨て群と攻略群を決める</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-weight:700;color:var(--accent2);margin-bottom:6px;">Phase 2（8〜10月中旬）— 過去問集中</div>
+        <div style="color:var(--muted);">・専門科目 過去5年分を3周（毎日30分以上）</div>
+        <div style="color:var(--muted);">・基礎科目（選択3群）過去5年分を2周</div>
+        <div style="color:var(--muted);">・適性科目 週1回ペースで1年分解いて精度維持</div>
+        <div style="color:var(--muted);">・解説を熟読して「なぜ正解か」を理解する</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-weight:700;color:var(--accent3);margin-bottom:6px;">Phase 3（10月中旬〜11月中旬）— 模擬試験</div>
+        <div style="color:var(--muted);">・本番形式（時間計測）で模擬試験を3回実施</div>
+        <div style="color:var(--muted);">・間違えた問題だけを集めた「弱点ノート」を回す</div>
+        <div style="color:var(--muted);">・専門科目を過去8年分に拡張</div>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--accent4);margin-bottom:6px;">Phase 4（11月16〜21日）— 直前仕上げ</div>
+        <div style="color:var(--muted);">・新しい知識より弱点ノートの復習に集中</div>
+        <div style="color:var(--muted);">・試験当日のタイムマネジメントを確認</div>
+        <div style="color:var(--muted);">・適性科目を最終確認（法令の確認）</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="page" id="page-log">
+    <div class="page-title">学習ログ</div>
+    <div class="page-sub">学習記録の確認・追加ができます</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="log-btn" onclick="openModal()">＋ 学習を記録</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div id="log-list" style="max-height:500px;overflow-y:auto;"></div>
+    </div>
+    <div class="section-title">科目別 累計時間</div>
+    <div class="card" id="subject-totals"></div>
+  </div>
+
+</main>
+</div>
+
+<!-- MODAL: 学習記録 -->
+<div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title">学習を記録する</div>
+    <div class="form-group">
+      <label class="form-label">日付</label>
+      <input class="form-input" type="date" id="log-date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">科目</label>
+      <select class="form-select" id="log-subject">
+        <option value="適性科目">適性科目</option>
+        <option value="基礎科目（環境・エネルギー）">基礎科目（環境・エネルギー）</option>
+        <option value="基礎科目（材料・化学）">基礎科目（材料・化学）</option>
+        <option value="基礎科目（情報・論理）">基礎科目（情報・論理）</option>
+        <option value="専門科目（土質・基礎）">専門科目（土質・基礎）</option>
+        <option value="専門科目（道路・橋梁）">専門科目（道路・橋梁）</option>
+        <option value="専門科目（河川・水文）">専門科目（河川・水文）</option>
+        <option value="専門科目（都市計画・施工）">専門科目（都市計画・施工）</option>
+        <option value="模擬試験">模擬試験</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">学習時間（分）</label>
+      <input class="form-input" type="number" id="log-mins" value="60" min="5" max="480">
+    </div>
+    <div class="form-group">
+      <label class="form-label">メモ（任意）</label>
+      <input class="form-input" type="text" id="log-memo" placeholder="例：過去問H30年を解いた">
+    </div>
+    <div class="modal-actions">
+      <button class="log-btn" onclick="saveLog()" style="flex:1;">保存する</button>
+      <button class="log-btn btn-gray" onclick="closeModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: 科目進捗編集 -->
+<div class="modal-overlay" id="modal-subject" onclick="closeSubjectModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title" id="modal-subject-title">完成度を更新</div>
+    <div class="form-group">
+      <label class="form-label">現在の完成度（過去問正答率の目安）</label>
+      <input class="form-input" type="range" id="subject-pct-input" min="0" max="100" step="5" value="0" oninput="document.getElementById('subject-pct-display').textContent=this.value+'%'">
+      <div style="text-align:center;font-family:var(--mono);font-size:20px;margin-top:8px;color:var(--accent)" id="subject-pct-display">0%</div>
+    </div>
+    <div class="modal-actions">
+      <button class="log-btn" onclick="saveSubject()" style="flex:1;">更新</button>
+      <button class="log-btn btn-gray" onclick="closeSubjectModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const EXAM_DATE = new Date('2026-11-22');
+const TODAY = new Date();
+TODAY.setHours(0,0,0,0);
+
+const PHASES = [
+  { name:'準備・全体把握', start:new Date('2026-07-01'), end:new Date('2026-07-31'), color:'var(--accent)',
+    tasks:['過去問1年分を解いて弱点を把握（答え見てOK）','適性科目の過去問3年分を一周','専門科目（建設）の参考書を通読','基礎科目：攻略する3群を決める'] },
+  { name:'科目別 過去問演習', start:new Date('2026-08-01'), end:new Date('2026-10-15'), color:'var(--accent2)',
+    tasks:['専門科目（建設）過去5年分を繰り返し解く','基礎科目（選択3群）過去5年分を2周','適性科目を週1回ペースで維持','解説を熟読して「なぜ正解か」を理解する'] },
+  { name:'弱点強化・模擬試験', start:new Date('2026-10-16'), end:new Date('2026-11-15'), color:'var(--accent3)',
+    tasks:['本番形式の模擬試験を3回実施','間違えた問題だけを「弱点ノート」で回す','専門科目を過去8年分に拡張','苦手分野の参考書で補強'] },
+  { name:'直前 仕上げ', start:new Date('2026-11-16'), end:new Date('2026-11-21'), color:'var(--accent4)',
+    tasks:['新しい知識より弱点ノートの復習','試験当日のタイムマネジメントを確認','適性科目の法令を最終確認','十分な睡眠と体調管理！'] },
+];
+
+let state = JSON.parse(localStorage.getItem('gijutsushi-state') || 'null') || {
+  logs: [],
+  subjects: [0,0,0,0,0,0,0,0],
+  tasksDone: {}
+};
+
+function save() { localStorage.setItem('gijutsushi-state', JSON.stringify(state)); }
+
+// countdown
+function updateCountdown() {
+  const diff = Math.ceil((EXAM_DATE - TODAY) / 86400000);
+  document.getElementById('countdown-days').textContent = diff > 0 ? diff : '本日！';
+  const d = TODAY.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+  document.getElementById('dash-date').textContent = d;
+  document.getElementById('today-date-label').textContent = d;
+}
+
+// current phase
+function getCurrentPhase() {
+  for (let i = 0; i < PHASES.length; i++) {
+    if (TODAY >= PHASES[i].start && TODAY <= PHASES[i].end) return i;
+  }
+  if (TODAY < PHASES[0].start) return -1;
+  return PHASES.length;
+}
+
+// logs
+function totalMins() { return state.logs.reduce((s,l)=>s+l.mins,0); }
+function weekMins() {
+  const mon = new Date(TODAY); mon.setDate(TODAY.getDate() - TODAY.getDay() + 1);
+  return state.logs.filter(l=>new Date(l.date)>=mon).reduce((s,l)=>s+l.mins,0);
+}
+function weekDays() {
+  const mon = new Date(TODAY); mon.setDate(TODAY.getDate() - TODAY.getDay() + 1);
+  const days = new Set(state.logs.filter(l=>new Date(l.date)>=mon).map(l=>l.date));
+  return days.size;
+}
+function streak() {
+  const days = new Set(state.logs.map(l=>l.date));
+  let s=0, d=new Date(TODAY);
+  while(true) {
+    const key = d.toISOString().slice(0,10);
+    if (days.has(key)) { s++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return s;
+}
+function subjectTotal(name) {
+  return state.logs.filter(l=>l.subject===name).reduce((s,l)=>s+l.mins,0);
+}
+function mogiCount() { return state.logs.filter(l=>l.subject==='模擬試験').length; }
+function subjectProgress() {
+  // weighted avg of tekisei(0), kiso(1-3), senmon(4-7)
+  const t = state.subjects[0];
+  const k = Math.round((state.subjects[1]+state.subjects[2]+state.subjects[3])/3);
+  const s = Math.round((state.subjects[4]+state.subjects[5]+state.subjects[6]+state.subjects[7])/4);
+  return {t,k,s};
+}
+
+function renderDashboard() {
+  const totalH = totalMins()/60;
+  document.getElementById('total-hours').textContent = totalH.toFixed(1)+'h';
+  document.getElementById('prog-total').style.width = Math.min(100, totalH/150*100)+'%';
+  document.getElementById('week-days').textContent = weekDays()+'日';
+  document.getElementById('prog-week').style.width = Math.min(100, weekDays()/5*100)+'%';
+  document.getElementById('streak-days').textContent = streak()+'日';
+
+  const {t,k,s} = subjectProgress();
+  document.getElementById('dash-tekisei').textContent = t+'%';
+  document.getElementById('prog-tekisei').style.width = t+'%';
+  document.getElementById('dash-kiso').textContent = k+'%';
+  document.getElementById('prog-kiso').style.width = k+'%';
+  document.getElementById('dash-senmon').textContent = s+'%';
+  document.getElementById('prog-senmon').style.width = s+'%';
+  const mc = mogiCount();
+  document.getElementById('dash-mogi').textContent = mc+'回';
+  document.getElementById('prog-mogi').style.width = Math.min(100, mc/3*100)+'%';
+
+  renderTodayTasks('today-tasks');
+  renderCalendar();
+  renderPhaseBadges();
+}
+
+function renderTodayTasks(elId) {
+  const ph = getCurrentPhase();
+  const el = document.getElementById(elId);
+  const phLabel = document.getElementById('today-phase-label');
+  const phInfo = document.getElementById('today-phase-info');
+  if (ph < 0) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0;">学習開始は7月1日から！まず受験申込を済ませよう。</div>';
+    if(phLabel) phLabel.textContent = '〜 7月開始まで準備期間';
+    if(phInfo) phInfo.textContent = '📋 受験申込（6月24日締切）を完了させてから、参考書を1冊購入しよう。まずはゴールをイメージする時期。';
+    return;
+  }
+  if (ph >= PHASES.length) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--accent);padding:8px 0;">🎉 試験お疲れさまでした！合格発表を待ちましょう。</div>';
+    return;
+  }
+  const phase = PHASES[ph];
+  if(phLabel) phLabel.textContent = `Phase ${ph+1} — ${phase.name}`;
+  if(phInfo) phInfo.textContent = `現在 Phase ${ph+1}「${phase.name}」です。${phase.end.toLocaleDateString('ja-JP',{month:'long',day:'numeric'})}まで。1日1時間を目標に続けよう！`;
+
+  const todayKey = TODAY.toISOString().slice(0,10);
+  el.innerHTML = phase.tasks.map((t,i)=>{
+    const key = todayKey+'-'+ph+'-'+i;
+    const done = state.tasksDone[key];
+    return `<div class="task-item${done?' done':''}" onclick="toggleTask('${key}')">
+      <div class="task-check">${done?'✓':''}</div>
+      <div class="task-content">
+        <div class="task-name">${t}</div>
+        <div class="task-meta">1日1時間のうち優先して取り組もう</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleTask(key) {
+  state.tasksDone[key] = !state.tasksDone[key];
+  save(); renderAll();
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calendar-grid');
+  const days = [];
+  for(let i=29;i>=0;i--) { const d=new Date(TODAY); d.setDate(TODAY.getDate()-i); days.push(d); }
+  const studiedDays = new Set(state.logs.map(l=>l.date));
+  const todayKey = TODAY.toISOString().slice(0,10);
+  const startDay = days[0].getDay();
+  let html = '';
+  for(let i=0;i<startDay;i++) html+='<div></div>';
+  days.forEach(d=>{
+    const key = d.toISOString().slice(0,10);
+    const isToday = key===todayKey;
+    const studied = studiedDays.has(key);
+    const label = d.getDate();
+    html+=`<div class="week-cell${studied?' studied':''}${isToday?' today':''}" title="${key}">${label}</div>`;
+  });
+  grid.innerHTML = html;
+}
+
+function renderPhaseBadges() {
+  PHASES.forEach((p,i)=>{
+    const el = document.getElementById('phase-status-'+i);
+    if(!el) return;
+    if(TODAY < p.start) el.innerHTML = '<span class="badge badge-gray">未開始</span>';
+    else if(TODAY > p.end) el.innerHTML = '<span class="badge badge-green">完了</span>';
+    else el.innerHTML = '<span class="badge badge-blue">進行中</span>';
+  });
+}
+
+function renderSubjects() {
+  const subjectNames = ['適性科目','基礎科目（環境・エネルギー）','基礎科目（材料・化学）','基礎科目（情報・論理）','専門科目（土質・基礎）','専門科目（道路・橋梁）','専門科目（河川・水文）','専門科目（都市計画・施工）'];
+  state.subjects.forEach((pct,i)=>{
+    const el = document.getElementById('s-pct-'+i);
+    const bel = document.getElementById('s-badge-'+i);
+    if(el) el.textContent = pct+'%';
+    if(bel) {
+      if(pct===0) bel.innerHTML='<span class="badge badge-gray">未着手</span>';
+      else if(pct<50) bel.innerHTML='<span class="badge badge-amber">学習中</span>';
+      else if(pct<80) bel.innerHTML='<span class="badge badge-blue">合格圏内</span>';
+      else bel.innerHTML='<span class="badge badge-green">仕上がり</span>';
+    }
+  });
+}
+
+function renderLog() {
+  const el = document.getElementById('log-list');
+  if(state.logs.length===0) { el.innerHTML='<div style="padding:20px;color:var(--muted);text-align:center;font-size:13px;">まだ記録がありません</div>'; return; }
+  const sorted = [...state.logs].sort((a,b)=>b.date.localeCompare(a.date));
+  el.innerHTML = sorted.map((l,i)=>{
+    const ridx = state.logs.indexOf(l);
+    return `<div class="log-row">
+      <div class="log-date">${l.date.slice(5)}</div>
+      <div class="log-subject">${l.subject}${l.memo?'<div style="color:var(--dimmed);font-size:11px;">'+l.memo+'</div>':''}</div>
+      <div class="log-mins">${l.mins}分</div>
+      <button class="log-del" onclick="deleteLog(${ridx})" title="削除">✕</button>
+    </div>`;
+  }).join('');
+
+  const totals = {};
+  state.logs.forEach(l=>{ totals[l.subject]=(totals[l.subject]||0)+l.mins; });
+  const tel = document.getElementById('subject-totals');
+  tel.innerHTML = Object.entries(totals).sort((a,b)=>b[1]-a[1]).map(([s,m])=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <div style="font-size:12px;flex:1;color:var(--text);">${s}</div>
+      <div style="font-family:var(--mono);font-size:13px;color:var(--accent);width:60px;text-align:right;">${(m/60).toFixed(1)}h</div>
+    </div>
+    <div class="prog-wrap" style="margin-bottom:6px;"><div class="prog-fill prog-green" style="width:${Math.min(100,m/3000*100)}%"></div></div>
+  `).join('');
+}
+
+function renderWeekSummary() {
+  const el = document.getElementById('week-summary');
+  if(!el) return;
+  const mon = new Date(TODAY); mon.setDate(TODAY.getDate()-TODAY.getDay()+1);
+  const days=['月','火','水','木','金','土','日'];
+  let html='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;">';
+  for(let i=0;i<7;i++){
+    const d=new Date(mon); d.setDate(mon.getDate()+i);
+    const key=d.toISOString().slice(0,10);
+    const mins=state.logs.filter(l=>l.date===key).reduce((s,l)=>s+l.mins,0);
+    const isToday=key===TODAY.toISOString().slice(0,10);
+    const isFuture=d>TODAY;
+    html+=`<div style="text-align:center;">
+      <div style="font-size:11px;color:${isToday?'var(--accent2)':'var(--dimmed)'};margin-bottom:4px;">${days[i]}</div>
+      <div style="width:36px;height:36px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--mono);
+        background:${mins>0?'rgba(110,231,183,0.2)':isToday?'rgba(96,165,250,0.1)':'var(--surface2)'};
+        border:1px solid ${mins>0?'rgba(110,231,183,0.4)':isToday?'rgba(96,165,250,0.3)':'var(--border)'};
+        color:${mins>0?'var(--accent)':isFuture?'var(--dimmed)':'var(--muted)'};">
+        ${mins>0?Math.round(mins/60*10)/10+'h':isFuture?'':'-'}
+      </div>
+    </div>`;
+  }
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function renderAll() {
+  renderDashboard();
+  renderTodayTasks('today-tasks-2');
+  renderWeekSummary();
+  renderSubjects();
+  renderLog();
+}
+
+// modal
+function openModal() {
+  const d = new Date(); const key = d.toISOString().slice(0,10);
+  document.getElementById('log-date').value = key;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function closeModalOutside(e) { if(e.target===document.getElementById('modal')) closeModal(); }
+function saveLog() {
+  const date = document.getElementById('log-date').value;
+  const subject = document.getElementById('log-subject').value;
+  const mins = parseInt(document.getElementById('log-mins').value)||0;
+  const memo = document.getElementById('log-memo').value.trim();
+  if(!date||mins<=0) return;
+  state.logs.push({date,subject,mins,memo});
+  document.getElementById('log-memo').value='';
+  save(); closeModal(); renderAll();
+}
+function deleteLog(i) { state.logs.splice(i,1); save(); renderAll(); }
+
+// subject modal
+let editingSubjectIdx = -1;
+function editSubject(i) {
+  editingSubjectIdx = i;
+  const names=['適性科目','基礎科目（環境・エネルギー）','基礎科目（材料・化学）','基礎科目（情報・論理）','専門科目（土質・基礎）','専門科目（道路・橋梁）','専門科目（河川・水文）','専門科目（都市計画・施工）'];
+  document.getElementById('modal-subject-title').textContent = names[i]+' — 完成度更新';
+  document.getElementById('subject-pct-input').value = state.subjects[i];
+  document.getElementById('subject-pct-display').textContent = state.subjects[i]+'%';
+  document.getElementById('modal-subject').classList.add('open');
+}
+function closeSubjectModal() { document.getElementById('modal-subject').classList.remove('open'); }
+function closeSubjectModalOutside(e) { if(e.target===document.getElementById('modal-subject')) closeSubjectModal(); }
+function saveSubject() {
+  state.subjects[editingSubjectIdx] = parseInt(document.getElementById('subject-pct-input').value);
+  save(); closeSubjectModal(); renderAll();
+}
+
+// nav
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// init
+updateCountdown();
+renderAll();
+</script>
+</body>
+</html>
