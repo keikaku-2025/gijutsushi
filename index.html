@@ -559,7 +559,7 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
     <div class="page-title">過去問管理</div>
     <div class="page-sub">年度 × 分野で、取り組んだ問題数と正答数を記録します</div>
 
-    <div class="tip">セルをクリックして「挑戦した問題数」と「正解した数」を入力してください。列は 適性 / 基礎（3群）/ 専門（4分野）です。色は正答率の目安：緑=80%以上、青=60%以上、黄=40%以上、赤=それ未満。</div>
+    <div class="tip">セルをクリックすると「周回」ごとに実施日・挑戦数・正解数を記録できます（1周目、2周目…と追加可能）。色はその年度×分野の累計正答率の目安：緑=80%以上、青=60%以上、黄=40%以上、赤=それ未満。セル内の「(2周)」などは周回数です。</div>
 
     <div class="grid-3">
       <div class="card card-sm">
@@ -767,10 +767,10 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
   </div>
 </div>
 
-<!-- MODAL: タスク追加 -->
+<!-- MODAL: タスク追加・編集 -->
 <div class="modal-overlay" id="modal-task" onclick="closeTaskModalOutside(event)">
   <div class="modal">
-    <div class="modal-title">今日のタスクを追加</div>
+    <div class="modal-title" id="modal-task-title">今日のタスクを追加</div>
     <div class="form-group">
       <label class="form-label">内容</label>
       <input class="form-input" type="text" id="task-text" placeholder="例：専門科目（道路）過去問1年分を解く">
@@ -785,9 +785,10 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
       </div>
     </div>
     <div class="modal-actions">
-      <button class="log-btn" onclick="saveCustomTask()" style="flex:1;">追加する</button>
+      <button class="log-btn" onclick="saveCustomTask()" id="task-save-btn" style="flex:1;">追加する</button>
       <button class="log-btn btn-gray" onclick="closeTaskModal()">キャンセル</button>
     </div>
+    <button class="log-btn" id="task-delete-btn" onclick="deleteFromTaskModal()" style="display:none;width:100%;margin-top:10px;border-color:var(--accent4);background:rgba(248,113,113,0.12);color:var(--accent4);">このタスクを削除</button>
   </div>
 </div>
 
@@ -846,19 +847,12 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
 
 <!-- MODAL: 過去問セル編集 -->
 <div class="modal-overlay" id="modal-pastexam" onclick="closePastExamModalOutside(event)">
-  <div class="modal">
+  <div class="modal" style="width:340px;max-height:85vh;">
     <div class="modal-title" id="modal-pastexam-title">過去問の記録</div>
-    <div class="form-group">
-      <label class="form-label">挑戦した問題数</label>
-      <input class="form-input" type="number" id="pe-attempted" min="0" max="99" value="0">
-    </div>
-    <div class="form-group">
-      <label class="form-label">正解した問題数</label>
-      <input class="form-input" type="number" id="pe-correct" min="0" max="99" value="0">
-    </div>
+    <div id="pe-passes-list"></div>
+    <button class="log-btn btn-gray btn-sm" onclick="addPassRow()" style="width:100%;margin-top:4px;">＋ 周回を追加</button>
     <div class="modal-actions">
-      <button class="log-btn" onclick="savePastExamCell()" style="flex:1;">保存</button>
-      <button class="log-btn btn-gray" onclick="closePastExamModal()">キャンセル</button>
+      <button class="log-btn" onclick="closePastExamModal()" style="flex:1;">閉じる</button>
     </div>
   </div>
 </div>
@@ -941,9 +935,25 @@ function selectMoreMenu(id) {
 
 // ---- 今日のタスク（自分で追加） ----
 let selectedTaskCategory = '基礎';
+let editingTaskId = null;
 function openTaskModal() {
+  editingTaskId = null;
+  document.getElementById('modal-task-title').textContent = '今日のタスクを追加';
   document.getElementById('task-text').value = '';
   pickTaskCategory('基礎');
+  document.getElementById('task-save-btn').textContent = '追加する';
+  document.getElementById('task-delete-btn').style.display = 'none';
+  document.getElementById('modal-task').classList.add('open');
+}
+function openEditTaskModal(id) {
+  const t = state.customTasks.find(t=>t.id===id);
+  if (!t) return;
+  editingTaskId = id;
+  document.getElementById('modal-task-title').textContent = 'タスクを編集';
+  document.getElementById('task-text').value = t.text;
+  pickTaskCategory(t.category);
+  document.getElementById('task-save-btn').textContent = '保存する';
+  document.getElementById('task-delete-btn').style.display = 'block';
   document.getElementById('modal-task').classList.add('open');
 }
 function closeTaskModal() { document.getElementById('modal-task').classList.remove('open'); }
@@ -963,17 +973,26 @@ function taskCatColor(cat) {
 function saveCustomTask() {
   const text = document.getElementById('task-text').value.trim();
   if (!text) return;
-  state.customTasks.push({ id: Date.now()+'-'+Math.random().toString(36).slice(2,7), text, category: selectedTaskCategory, done:false });
+  if (editingTaskId) {
+    const t = state.customTasks.find(t=>t.id===editingTaskId);
+    if (t) { t.text = text; t.category = selectedTaskCategory; }
+    save(); closeTaskModal(); renderAll();
+    showToast('タスクを更新しました');
+  } else {
+    state.customTasks.push({ id: Date.now()+'-'+Math.random().toString(36).slice(2,7), text, category: selectedTaskCategory, done:false });
+    save(); closeTaskModal(); renderAll();
+    showToast('タスクを追加しました');
+  }
+}
+function deleteFromTaskModal() {
+  if (!editingTaskId) return;
+  state.customTasks = state.customTasks.filter(t=>t.id!==editingTaskId);
   save(); closeTaskModal(); renderAll();
-  showToast('タスクを追加しました');
+  showToast('タスクを削除しました');
 }
 function toggleCustomTask(id) {
   const t = state.customTasks.find(t=>t.id===id);
   if (t) { t.done = !t.done; save(); renderAll(); }
-}
-function deleteCustomTask(id) {
-  state.customTasks = state.customTasks.filter(t=>t.id!==id);
-  save(); renderAll();
 }
 
 // ---- date helpers (月曜始まり) ----
@@ -1038,12 +1057,24 @@ function subjectProgress() {
   return {t,k,s};
 }
 
-// ---- 過去問マトリクス ----
+// ---- 過去問マトリクス（年度×分野、分野ごとに複数「周回」を記録） ----
 function getYearData(yearKey) {
   if (!state.pastExams[yearKey]) {
-    state.pastExams[yearKey] = SUBJECT_NAMES.map(()=>({attempted:0, correct:0}));
+    state.pastExams[yearKey] = SUBJECT_NAMES.map(()=>[]);
+  } else {
+    // 旧形式（{attempted,correct}単体）からの移行
+    state.pastExams[yearKey] = state.pastExams[yearKey].map(cell=>{
+      if (Array.isArray(cell)) return cell;
+      if (cell && typeof cell==='object' && ('attempted' in cell)) {
+        return (cell.attempted>0 || cell.correct>0) ? [{attempted:cell.attempted, correct:cell.correct, date:''}] : [];
+      }
+      return [];
+    });
   }
   return state.pastExams[yearKey];
+}
+function cellSum(passes) {
+  return passes.reduce((s,p)=>({attempted:s.attempted+p.attempted, correct:s.correct+p.correct}), {attempted:0, correct:0});
 }
 function yearLabelOf(yearKey) {
   const y = EXAM_YEARS.find(y=>y.key===yearKey);
@@ -1062,7 +1093,11 @@ function pastExamTotals() {
   const perCat = SUBJECT_NAMES.map(()=>({attempted:0,correct:0}));
   EXAM_YEARS.forEach(y=>{
     const data = getYearData(y.key);
-    data.forEach((c,i)=>{ attempted+=c.attempted; correct+=c.correct; perCat[i].attempted+=c.attempted; perCat[i].correct+=c.correct; });
+    data.forEach((passes,i)=>{
+      const s = cellSum(passes);
+      attempted+=s.attempted; correct+=s.correct;
+      perCat[i].attempted+=s.attempted; perCat[i].correct+=s.correct;
+    });
   });
   return {attempted, correct, perCat};
 }
@@ -1070,21 +1105,64 @@ function pastExamTotals() {
 let editingPastExam = null;
 function editPastExamCell(yearKey, catIdx) {
   editingPastExam = {year:yearKey, cat:catIdx};
-  const d = getYearData(yearKey)[catIdx];
   document.getElementById('modal-pastexam-title').textContent = yearLabelOf(yearKey)+' － '+SUBJECT_NAMES[catIdx];
-  document.getElementById('pe-attempted').value = d.attempted;
-  document.getElementById('pe-correct').value = d.correct;
+  renderPastExamModalBody();
   document.getElementById('modal-pastexam').classList.add('open');
 }
 function closePastExamModal() { document.getElementById('modal-pastexam').classList.remove('open'); }
 function closePastExamModalOutside(e) { if(e.target===document.getElementById('modal-pastexam')) closePastExamModal(); }
-function savePastExamCell() {
-  const d = getYearData(editingPastExam.year)[editingPastExam.cat];
-  let att = parseInt(document.getElementById('pe-attempted').value)||0;
-  let cor = parseInt(document.getElementById('pe-correct').value)||0;
-  if (cor > att) cor = att;
-  d.attempted = att; d.correct = cor;
-  save(); closePastExamModal(); renderPastExams(); renderDashboard();
+
+function renderPastExamModalBody() {
+  const passes = getYearData(editingPastExam.year)[editingPastExam.cat];
+  const list = document.getElementById('pe-passes-list');
+  if (passes.length===0) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:10px 2px;">まだ記録がありません。「＋ 周回を追加」から1周目を記録しましょう。</div>';
+    return;
+  }
+  list.innerHTML = passes.map((p,i)=>`
+    <div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:var(--surface2);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:700;color:var(--accent2);">第${i+1}周</div>
+        <button class="task-del" onclick="deletePassRow(${i})" title="この周回を削除">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+        <div>
+          <label class="form-label" style="font-size:10px;margin-bottom:3px;">実施日</label>
+          <input class="form-input" style="padding:6px 8px;font-size:12px;" type="date" value="${p.date||''}" onchange="updatePassField(${i},'date',this.value)">
+        </div>
+        <div>
+          <label class="form-label" style="font-size:10px;margin-bottom:3px;">挑戦数</label>
+          <input class="form-input" style="padding:6px 8px;font-size:12px;" type="number" min="0" value="${p.attempted}" onchange="updatePassField(${i},'attempted',this.value)">
+        </div>
+        <div>
+          <label class="form-label" style="font-size:10px;margin-bottom:3px;">正解数</label>
+          <input class="form-input" style="padding:6px 8px;font-size:12px;" type="number" min="0" value="${p.correct}" onchange="updatePassField(${i},'correct',this.value)">
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+function updatePassField(i, field, value) {
+  const passes = getYearData(editingPastExam.year)[editingPastExam.cat];
+  if (!passes[i]) return;
+  if (field==='date') {
+    passes[i].date = value;
+  } else {
+    let n = parseInt(value)||0;
+    passes[i][field] = n;
+    if (passes[i].correct > passes[i].attempted) passes[i].correct = passes[i].attempted;
+  }
+  save(); renderPastExamModalBody(); renderPastExams(); renderDashboard();
+}
+function addPassRow() {
+  const passes = getYearData(editingPastExam.year)[editingPastExam.cat];
+  passes.push({attempted:0, correct:0, date: new Date().toISOString().slice(0,10)});
+  save(); renderPastExamModalBody(); renderPastExams(); renderDashboard();
+}
+function deletePassRow(i) {
+  const passes = getYearData(editingPastExam.year)[editingPastExam.cat];
+  passes.splice(i,1);
+  save(); renderPastExamModalBody(); renderPastExams(); renderDashboard();
 }
 
 function renderPastExams() {
@@ -1102,10 +1180,12 @@ function renderPastExams() {
     const data = getYearData(y.key);
     let rowAtt=0, rowCor=0;
     html += `<tr><td class="exam-year">${y.label}</td>`;
-    data.forEach((c,i)=>{
-      rowAtt += c.attempted; rowCor += c.correct;
-      const color = examCellColor(c.attempted, c.correct);
-      const label = c.attempted===0 ? '—' : `${c.correct}/${c.attempted}`;
+    data.forEach((passes,i)=>{
+      const s = cellSum(passes);
+      rowAtt += s.attempted; rowCor += s.correct;
+      const color = examCellColor(s.attempted, s.correct);
+      const passLabel = passes.length>1 ? ` <span style="font-size:8.5px;color:var(--dimmed);">(${passes.length}周)</span>` : '';
+      const label = s.attempted===0 ? '—' : `${s.correct}/${s.attempted}${passLabel}`;
       html += `<td class="exam-cell" style="color:${color}" onclick="editPastExamCell('${y.key}',${i})">${label}</td>`;
     });
     const rowColor = examCellColor(rowAtt, rowCor);
@@ -1308,7 +1388,9 @@ function renderDashboard() {
 }
 
 function renderCustomTasksHTML() {
-  if (state.customTasks.length===0) return '';
+  if (state.customTasks.length===0) {
+    return '<div style="color:var(--muted);font-size:13px;padding:8px 0;">「＋ タスク追加」から今日やることを登録しよう</div>';
+  }
   return state.customTasks.map(t=>{
     const col = taskCatColor(t.category);
     return `<div class="task-item${t.done?' done':''}">
@@ -1319,7 +1401,7 @@ function renderCustomTasksHTML() {
         </div>
         <div class="task-meta"><span class="task-cat-badge" style="background:${col.bg};color:${col.c}">${t.category}</span></div>
       </div>
-      <button class="task-del" onclick="event.stopPropagation();deleteCustomTask('${t.id}')" title="削除">✕</button>
+      <button class="task-del" onclick="event.stopPropagation();openEditTaskModal('${t.id}')" title="編集">✎</button>
     </div>`;
   }).join('');
 }
@@ -1329,40 +1411,19 @@ function renderTodayTasks(elId) {
   const el = document.getElementById(elId);
   const phLabel = document.getElementById('today-phase-label');
   const phInfo = document.getElementById('today-phase-info');
-  const customHTML = renderCustomTasksHTML();
   if (ph < 0) {
-    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0 12px;">学習開始は7月1日から。参考書を1冊決めて、ゴールをイメージする準備期間です。</div>' + customHTML;
     if(phLabel) phLabel.textContent = '〜 7月開始まで準備期間';
     if(phInfo) phInfo.textContent = '📋 参考書を1冊購入し、試験の全体像をつかんでおこう。';
-    return;
+  } else if (ph >= PHASES.length) {
+    if(phLabel) phLabel.textContent = '試験期間終了';
+    if(phInfo) phInfo.textContent = '🎉 試験お疲れさまでした！合格発表を待ちましょう。';
+  } else {
+    const phase = PHASES[ph];
+    if(phLabel) phLabel.textContent = `Phase ${ph+1} — ${phase.name}`;
+    if(phInfo) phInfo.textContent = `現在 Phase ${ph+1}「${phase.name}」です。${phase.end.toLocaleDateString('ja-JP',{month:'long',day:'numeric'})}まで。`;
   }
-  if (ph >= PHASES.length) {
-    el.innerHTML = '<div style="font-size:13px;color:var(--accent);padding:8px 0 12px;">🎉 試験お疲れさまでした！合格発表を待ちましょう。</div>' + customHTML;
-    return;
-  }
-  const phase = PHASES[ph];
-  if(phLabel) phLabel.textContent = `Phase ${ph+1} — ${phase.name}`;
-  if(phInfo) phInfo.textContent = `現在 Phase ${ph+1}「${phase.name}」です。${phase.end.toLocaleDateString('ja-JP',{month:'long',day:'numeric'})}まで。1日1時間を目標に続けよう！`;
-
-  const todayKey = TODAY.toISOString().slice(0,10);
-  el.innerHTML = phase.tasks.map((t,i)=>{
-    const key = todayKey+'-'+ph+'-'+i;
-    const done = state.tasksDone[key];
-    return `<div class="task-item${done?' done':''}" onclick="toggleTask('${key}')">
-      <div class="task-check">${done?'✓':''}</div>
-      <div class="task-content">
-        <div class="task-name">${t}</div>
-        <div class="task-meta">1日1時間のうち優先して取り組もう</div>
-      </div>
-    </div>`;
-  }).join('') + customHTML;
+  el.innerHTML = renderCustomTasksHTML();
 }
-
-function toggleTask(key) {
-  state.tasksDone[key] = !state.tasksDone[key];
-  save(); renderAll();
-}
-
 
 function renderCalendar() {
   const grid = document.getElementById('calendar-grid');
