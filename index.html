@@ -234,23 +234,38 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
     background: rgba(24,24,28,0.96); backdrop-filter: blur(10px);
     border-top: 1px solid var(--border2);
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
-    overflow-x: auto; gap: 2px;
+    padding: 4px 2px calc(4px + env(safe-area-inset-bottom));
+    gap: 0;
   }
   .bottom-nav .nav-btn {
-    flex: 1 0 auto; min-width: 62px; flex-direction: column; gap: 2px;
-    align-items: center; padding: 7px 6px; border-radius: 10px; font-size: 10px;
+    flex: 1 1 0; min-width: 0; flex-direction: column; gap: 2px;
+    align-items: center; padding: 6px 2px; border-radius: 10px; font-size: 9.5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .bottom-nav .nav-btn .nav-icon { font-size: 16px; }
+  .bottom-nav .nav-btn .nav-icon { font-size: 15px; width: auto; }
   .bottom-nav .nav-btn.active { background: var(--accent-dim); color: var(--accent); }
 
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(1, 1fr); }
   .grid-2 { grid-template-columns: 1fr; }
   .review-form-row { grid-template-columns: 1fr; }
-  .modal { width: calc(100vw - 40px); max-width: 360px; }
-  .subject-header-row, .subject-row { grid-template-columns: 1fr 60px 50px 74px; font-size: 12px; }
-}
+/* task category picker */
+.cat-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.cat-btn { padding: 10px 4px; border-radius: var(--radius-sm); border: 1px solid var(--border2); background: var(--surface2); color: var(--muted); font-family: var(--sans); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+.cat-btn.on[data-cat="基礎"] { background: rgba(245,158,11,0.15); border-color: var(--accent3); color: var(--accent3); }
+.cat-btn.on[data-cat="専門"] { background: rgba(248,113,113,0.15); border-color: var(--accent4); color: var(--accent4); }
+.cat-btn.on[data-cat="適性"] { background: rgba(110,231,183,0.15); border-color: var(--accent); color: var(--accent); }
+.cat-btn.on[data-cat="その他"] { background: rgba(96,165,250,0.15); border-color: var(--accent2); color: var(--accent2); }
+.task-cat-badge { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; flex-shrink: 0; }
+.task-item-row { display: flex; align-items: center; gap: 8px; }
+.task-del { color: var(--dimmed); cursor: pointer; padding: 4px 6px; border-radius: 4px; background: none; border: none; font-size: 13px; flex-shrink: 0; }
+.task-del:hover { background: rgba(248,113,113,0.15); color: var(--accent4); }
+
+/* toast */
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: var(--surface2); border: 1px solid var(--border2); color: var(--text); padding: 10px 18px; border-radius: 99px; font-size: 12.5px; box-shadow: 0 8px 24px rgba(0,0,0,0.35); z-index: 200; opacity: 0; pointer-events: none; transition: all 0.25s ease; display:flex; align-items:center; gap:8px; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+@media (max-width: 860px) { .toast { bottom: calc(78px + env(safe-area-inset-bottom)); } }
 </style>
 </head>
 <body>
@@ -333,7 +348,10 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
           <div class="today-title" id="today-task-title">今日のタスク</div>
           <div class="today-phase" id="today-phase-label">— </div>
         </div>
-        <button class="log-btn" onclick="openModal()">＋ 学習を記録</button>
+        <div style="display:flex;gap:8px;">
+          <button class="log-btn btn-gray btn-sm" onclick="openTaskModal()">＋ タスク追加</button>
+          <button class="log-btn" onclick="openModal()">＋ 学習を記録</button>
+        </div>
       </div>
       <div class="task-list" id="today-tasks"></div>
     </div>
@@ -414,7 +432,10 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
     <div class="today-card">
       <div class="today-header">
         <div class="today-title">本日のタスク</div>
-        <button class="log-btn" onclick="openModal()">＋ 記録する</button>
+        <div style="display:flex;gap:8px;">
+          <button class="log-btn btn-gray btn-sm" onclick="openTaskModal()">＋ タスク追加</button>
+          <button class="log-btn" onclick="openModal()">＋ 記録する</button>
+        </div>
       </div>
       <div class="task-list" id="today-tasks-2"></div>
     </div>
@@ -597,6 +618,7 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
       </div>
       <button class="log-btn" onclick="saveWeeklyReview()">今週の振り返りを保存</button>
     </div>
+    <div class="section-title" style="margin-top:20px;">記録の履歴 <span id="weekly-review-count" style="color:var(--dimmed);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
     <div id="weekly-review-list"></div>
 
     <div class="section-title">隔週振り返り（計画の見直し） <span id="review-biweek-label" style="color:var(--dimmed);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
@@ -619,6 +641,7 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
       </div>
       <button class="log-btn" onclick="saveBiweeklyReview()">隔週振り返りを保存</button>
     </div>
+    <div class="section-title" style="margin-top:20px;">記録の履歴 <span id="biweekly-review-count" style="color:var(--dimmed);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
     <div id="biweekly-review-list"></div>
   </div>
 
@@ -626,8 +649,6 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
   <div class="page" id="page-plan">
     <div class="page-title">学習計画</div>
     <div class="page-sub">7月〜11月22日（試験日）の全体スケジュール</div>
-
-    <div class="warn">📅 受験申込締切：2026年6月24日（水）WEB：6月23日17:00まで。まだなら今すぐ申込を！</div>
 
     <div class="section-title">フェーズ概要</div>
     <div class="phase-row">
@@ -726,12 +747,49 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
 <nav class="bottom-nav">
   <button class="nav-btn active" onclick="showPage('dashboard')"><span class="nav-icon">⬛</span>ホーム</button>
   <button class="nav-btn" onclick="showPage('today')"><span class="nav-icon">▶</span>今日</button>
-  <button class="nav-btn" onclick="showPage('subjects')"><span class="nav-icon">◎</span>科目</button>
   <button class="nav-btn" onclick="showPage('pastexams')"><span class="nav-icon">▤</span>過去問</button>
   <button class="nav-btn" onclick="showPage('reviews')"><span class="nav-icon">✎</span>振返り</button>
-  <button class="nav-btn" onclick="showPage('plan')"><span class="nav-icon">≡</span>計画</button>
   <button class="nav-btn" onclick="showPage('log')"><span class="nav-icon">◈</span>ログ</button>
+  <button class="nav-btn" onclick="openMoreMenu()"><span class="nav-icon">•••</span>その他</button>
 </nav>
+
+<!-- MODAL: その他メニュー（モバイル用） -->
+<div class="modal-overlay" id="modal-more" onclick="closeMoreMenuOutside(event)">
+  <div class="modal" style="width:300px;">
+    <div class="modal-title">その他のページ</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="log-btn btn-gray" style="justify-content:flex-start;" onclick="selectMoreMenu('subjects')">◎ 科目別進捗</button>
+      <button class="log-btn btn-gray" style="justify-content:flex-start;" onclick="selectMoreMenu('plan')">≡ 学習計画</button>
+    </div>
+    <div class="modal-actions">
+      <button class="log-btn btn-gray" onclick="closeMoreMenu()" style="flex:1;">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: タスク追加 -->
+<div class="modal-overlay" id="modal-task" onclick="closeTaskModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title">今日のタスクを追加</div>
+    <div class="form-group">
+      <label class="form-label">内容</label>
+      <input class="form-input" type="text" id="task-text" placeholder="例：専門科目（道路）過去問1年分を解く">
+    </div>
+    <div class="form-group">
+      <label class="form-label">分類</label>
+      <div class="cat-picker" id="task-cat-picker">
+        <button type="button" class="cat-btn" data-cat="基礎" onclick="pickTaskCategory('基礎')">基礎</button>
+        <button type="button" class="cat-btn" data-cat="専門" onclick="pickTaskCategory('専門')">専門</button>
+        <button type="button" class="cat-btn" data-cat="適性" onclick="pickTaskCategory('適性')">適性</button>
+        <button type="button" class="cat-btn" data-cat="その他" onclick="pickTaskCategory('その他')">その他</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="log-btn" onclick="saveCustomTask()" style="flex:1;">追加する</button>
+      <button class="log-btn btn-gray" onclick="closeTaskModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL: 学習記録 -->
 <div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
@@ -843,15 +901,80 @@ let state = JSON.parse(localStorage.getItem('gijutsushi-state') || 'null') || {
   pastExams: {},
   weeklyReviews: [],
   biweeklyReviews: [],
-  weeklyGoalHours: 10
+  weeklyGoalHours: 10,
+  customTasks: []
 };
 // 既存データに新フィールドが無い場合の補完（過去バージョンからの移行）
 if(!state.pastExams) state.pastExams = {};
 if(!state.weeklyReviews) state.weeklyReviews = [];
 if(!state.biweeklyReviews) state.biweeklyReviews = [];
 if(!state.weeklyGoalHours) state.weeklyGoalHours = 10;
+if(!state.customTasks) state.customTasks = [];
 
 function save() { localStorage.setItem('gijutsushi-state', JSON.stringify(state)); }
+
+// ---- トースト通知（保存できたことを画面上で確認できるように） ----
+let toastTimer = null;
+function showToast(msg) {
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast'; el.className = 'toast';
+    el.innerHTML = '<span class="dot"></span><span id="toast-msg"></span>';
+    document.body.appendChild(el);
+  }
+  document.getElementById('toast-msg').textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ el.classList.remove('show'); }, 1800);
+}
+
+// ---- 「その他」メニュー（モバイル用） ----
+function openMoreMenu() { document.getElementById('modal-more').classList.add('open'); }
+function closeMoreMenu() { document.getElementById('modal-more').classList.remove('open'); }
+function closeMoreMenuOutside(e) { if(e.target===document.getElementById('modal-more')) closeMoreMenu(); }
+function selectMoreMenu(id) {
+  closeMoreMenu();
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+}
+
+// ---- 今日のタスク（自分で追加） ----
+let selectedTaskCategory = '基礎';
+function openTaskModal() {
+  document.getElementById('task-text').value = '';
+  pickTaskCategory('基礎');
+  document.getElementById('modal-task').classList.add('open');
+}
+function closeTaskModal() { document.getElementById('modal-task').classList.remove('open'); }
+function closeTaskModalOutside(e) { if(e.target===document.getElementById('modal-task')) closeTaskModal(); }
+function pickTaskCategory(cat) {
+  selectedTaskCategory = cat;
+  document.querySelectorAll('#task-cat-picker .cat-btn').forEach(b=>{
+    b.classList.toggle('on', b.getAttribute('data-cat')===cat);
+  });
+}
+function taskCatColor(cat) {
+  if (cat==='基礎') return {bg:'rgba(245,158,11,0.15)', c:'var(--accent3)'};
+  if (cat==='専門') return {bg:'rgba(248,113,113,0.15)', c:'var(--accent4)'};
+  if (cat==='適性') return {bg:'rgba(110,231,183,0.15)', c:'var(--accent)'};
+  return {bg:'rgba(96,165,250,0.15)', c:'var(--accent2)'};
+}
+function saveCustomTask() {
+  const text = document.getElementById('task-text').value.trim();
+  if (!text) return;
+  state.customTasks.push({ id: Date.now()+'-'+Math.random().toString(36).slice(2,7), text, category: selectedTaskCategory, done:false });
+  save(); closeTaskModal(); renderAll();
+  showToast('タスクを追加しました');
+}
+function toggleCustomTask(id) {
+  const t = state.customTasks.find(t=>t.id===id);
+  if (t) { t.done = !t.done; save(); renderAll(); }
+}
+function deleteCustomTask(id) {
+  state.customTasks = state.customTasks.filter(t=>t.id!==id);
+  save(); renderAll();
+}
 
 // ---- date helpers (月曜始まり) ----
 function mondayOf(d) {
@@ -1089,6 +1212,7 @@ function renderReviews() {
 
   const wList = document.getElementById('weekly-review-list');
   const sortedW = [...state.weeklyReviews].sort((a,b)=>b.week.localeCompare(a.week));
+  document.getElementById('weekly-review-count').textContent = sortedW.length>0 ? `全${sortedW.length}件を保存済み` : '';
   if (sortedW.length===0) {
     wList.innerHTML = '<div style="padding:12px 4px;color:var(--muted);font-size:12px;">まだ記録がありません</div>';
   } else {
@@ -1109,6 +1233,7 @@ function renderReviews() {
 
   const bList = document.getElementById('biweekly-review-list');
   const sortedB = [...state.biweeklyReviews].sort((a,b)=>b.period.localeCompare(a.period));
+  document.getElementById('biweekly-review-count').textContent = sortedB.length>0 ? `全${sortedB.length}件を保存済み` : '';
   if (sortedB.length===0) {
     bList.innerHTML = '<div style="padding:12px 4px;color:var(--muted);font-size:12px;">まだ記録がありません</div>';
   } else {
@@ -1182,19 +1307,37 @@ function renderDashboard() {
   renderPhaseBadges();
 }
 
+function renderCustomTasksHTML() {
+  if (state.customTasks.length===0) return '';
+  return state.customTasks.map(t=>{
+    const col = taskCatColor(t.category);
+    return `<div class="task-item${t.done?' done':''}">
+      <div class="task-check" onclick="toggleCustomTask('${t.id}')">${t.done?'✓':''}</div>
+      <div class="task-content" onclick="toggleCustomTask('${t.id}')">
+        <div class="task-item-row">
+          <div class="task-name">${escapeHtml(t.text)}</div>
+        </div>
+        <div class="task-meta"><span class="task-cat-badge" style="background:${col.bg};color:${col.c}">${t.category}</span></div>
+      </div>
+      <button class="task-del" onclick="event.stopPropagation();deleteCustomTask('${t.id}')" title="削除">✕</button>
+    </div>`;
+  }).join('');
+}
+
 function renderTodayTasks(elId) {
   const ph = getCurrentPhase();
   const el = document.getElementById(elId);
   const phLabel = document.getElementById('today-phase-label');
   const phInfo = document.getElementById('today-phase-info');
+  const customHTML = renderCustomTasksHTML();
   if (ph < 0) {
-    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0;">学習開始は7月1日から！まず受験申込を済ませよう。</div>';
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0 12px;">学習開始は7月1日から。参考書を1冊決めて、ゴールをイメージする準備期間です。</div>' + customHTML;
     if(phLabel) phLabel.textContent = '〜 7月開始まで準備期間';
-    if(phInfo) phInfo.textContent = '📋 受験申込（6月24日締切）を完了させてから、参考書を1冊購入しよう。まずはゴールをイメージする時期。';
+    if(phInfo) phInfo.textContent = '📋 参考書を1冊購入し、試験の全体像をつかんでおこう。';
     return;
   }
   if (ph >= PHASES.length) {
-    el.innerHTML = '<div style="font-size:13px;color:var(--accent);padding:8px 0;">🎉 試験お疲れさまでした！合格発表を待ちましょう。</div>';
+    el.innerHTML = '<div style="font-size:13px;color:var(--accent);padding:8px 0 12px;">🎉 試験お疲れさまでした！合格発表を待ちましょう。</div>' + customHTML;
     return;
   }
   const phase = PHASES[ph];
@@ -1212,13 +1355,14 @@ function renderTodayTasks(elId) {
         <div class="task-meta">1日1時間のうち優先して取り組もう</div>
       </div>
     </div>`;
-  }).join('');
+  }).join('') + customHTML;
 }
 
 function toggleTask(key) {
   state.tasksDone[key] = !state.tasksDone[key];
   save(); renderAll();
 }
+
 
 function renderCalendar() {
   const grid = document.getElementById('calendar-grid');
