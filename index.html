@@ -148,6 +148,23 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 .log-del { color: var(--dimmed); cursor: pointer; padding: 2px 6px; border-radius: 4px; background: none; border: none; font-size: 13px; }
 .log-del:hover { background: rgba(248,113,113,0.15); color: var(--accent4); }
 
+/* view toggle (list / weekly) */
+.view-toggle { display: inline-flex; gap: 2px; background: var(--surface2); border: 1px solid var(--border); border-radius: 99px; padding: 3px; margin-bottom: 14px; }
+.view-toggle-btn { border: none; background: none; color: var(--muted); font-family: var(--sans); font-size: 12px; padding: 6px 16px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+.view-toggle-btn.active { background: var(--accent-dim); color: var(--accent); font-weight: 700; }
+
+/* weekly grouped log view (native <details>/<summary>) */
+.log-week-group { border-bottom: 1px solid var(--border); }
+.log-week-group:last-child { border-bottom: none; }
+.log-week-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; cursor: pointer; list-style: none; transition: background 0.1s; }
+.log-week-summary::-webkit-details-marker { display: none; }
+.log-week-summary:hover { background: var(--surface2); }
+.log-week-range { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; }
+.chevron { font-size: 10px; color: var(--dimmed); transition: transform 0.15s; display: inline-block; }
+.log-week-group[open] .chevron { transform: rotate(90deg); }
+.log-week-total { font-size: 11.5px; color: var(--muted); font-family: var(--mono); flex-shrink: 0; white-space: nowrap; }
+.log-week-body { background: rgba(0,0,0,0.15); }
+
 /* modal */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
@@ -766,8 +783,12 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
     <div style="display:flex;gap:8px;margin-bottom:16px;">
       <button class="log-btn" onclick="openModal()">＋ 学習を記録</button>
     </div>
+    <div class="view-toggle" id="log-view-toggle">
+      <button class="view-toggle-btn" data-mode="list" onclick="setLogViewMode('list')">リスト表示</button>
+      <button class="view-toggle-btn active" data-mode="weekly" onclick="setLogViewMode('weekly')">週別まとめ</button>
+    </div>
     <div class="card" style="padding:0;overflow:hidden;">
-      <div id="log-list" style="max-height:500px;overflow-y:auto;"></div>
+      <div id="log-list" style="max-height:600px;overflow-y:auto;"></div>
     </div>
     <div class="section-title">科目別 累計時間</div>
     <div class="card" id="subject-totals"></div>
@@ -1083,6 +1104,13 @@ function mondayOf(d) {
   return dt;
 }
 function fmtMD(d) { return (d.getMonth()+1)+'/'+d.getDate(); }
+// ローカルのカレンダー日付を "YYYY-MM-DD" にする（toISOString()はUTC変換されるため使わない）
+function localDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 
 // countdown
 function updateCountdown() {
@@ -1108,19 +1136,19 @@ function getCurrentPhase() {
 // logs
 function totalMins() { return state.logs.reduce((s,l)=>s+l.mins,0); }
 function weekMins() {
-  const mon = mondayOf(TODAY);
-  return state.logs.filter(l=>new Date(l.date)>=mon).reduce((s,l)=>s+l.mins,0);
+  const monKey = localDateStr(mondayOf(TODAY));
+  return state.logs.filter(l=>l.date>=monKey).reduce((s,l)=>s+l.mins,0);
 }
 function weekDays() {
-  const mon = mondayOf(TODAY);
-  const days = new Set(state.logs.filter(l=>new Date(l.date)>=mon).map(l=>l.date));
+  const monKey = localDateStr(mondayOf(TODAY));
+  const days = new Set(state.logs.filter(l=>l.date>=monKey).map(l=>l.date));
   return days.size;
 }
 function streak() {
   const days = new Set(state.logs.map(l=>l.date));
   let s=0, d=new Date(TODAY);
   while(true) {
-    const key = d.toISOString().slice(0,10);
+    const key = localDateStr(d);
     if (days.has(key)) { s++; d.setDate(d.getDate()-1); }
     else break;
   }
@@ -1236,7 +1264,7 @@ function updatePassField(i, field, value) {
 }
 function addPassRow() {
   const passes = getYearData(editingPastExam.year)[editingPastExam.cat];
-  passes.push({attempted:0, correct:0, date: new Date().toISOString().slice(0,10)});
+  passes.push({attempted:0, correct:0, date: localDateStr(new Date())});
   save(); renderPastExamModalBody(); renderPastExams(); renderDashboard();
 }
 function deletePassRow(i) {
@@ -1301,7 +1329,7 @@ function initRatingPicker() {
 }
 
 function saveWeeklyReview() {
-  const key = mondayOf(TODAY).toISOString().slice(0,10);
+  const key = localDateStr(mondayOf(TODAY));
   const good = document.getElementById('wr-good').value.trim();
   const bad = document.getElementById('wr-bad').value.trim();
   const goal = document.getElementById('wr-goal').value.trim();
@@ -1325,7 +1353,7 @@ function getBiweekPeriod(d) {
   const periodIndex = Math.floor(weeksSinceRef/2);
   const periodStart = new Date(refMonday); periodStart.setDate(refMonday.getDate()+periodIndex*14);
   const periodEnd = new Date(periodStart); periodEnd.setDate(periodStart.getDate()+13);
-  return {key: periodStart.toISOString().slice(0,10), start: periodStart, end: periodEnd};
+  return {key: localDateStr(periodStart), start: periodStart, end: periodEnd};
 }
 
 function saveBiweeklyReview() {
@@ -1335,7 +1363,7 @@ function saveBiweeklyReview() {
   const adjust = document.getElementById('br-adjust').value.trim();
   const next = document.getElementById('br-next').value.trim();
   if (!progress && !weak && !adjust && !next) return;
-  const entry = {period: period.key, periodStart: period.start.toISOString().slice(0,10), periodEnd: period.end.toISOString().slice(0,10), progress, weak, adjust, next};
+  const entry = {period: period.key, periodStart: localDateStr(period.start), periodEnd: localDateStr(period.end), progress, weak, adjust, next};
   const idx = state.biweeklyReviews.findIndex(r=>r.period===period.key);
   if (idx>=0) state.biweeklyReviews[idx]=entry; else state.biweeklyReviews.push(entry);
   save();
@@ -1350,7 +1378,7 @@ function renderReviews() {
   const wkMon = mondayOf(TODAY);
   const wkSun = new Date(wkMon); wkSun.setDate(wkMon.getDate()+6);
   document.getElementById('review-week-label').textContent = `（${fmtMD(wkMon)}〜${fmtMD(wkSun)}）`;
-  const wkKey = wkMon.toISOString().slice(0,10);
+  const wkKey = localDateStr(wkMon);
   const existingWk = state.weeklyReviews.find(r=>r.week===wkKey);
   if (existingWk) {
     document.getElementById('wr-good').value = existingWk.good;
@@ -1510,12 +1538,12 @@ function renderCalendar() {
   const days = [];
   for(let i=29;i>=0;i--) { const d=new Date(TODAY); d.setDate(TODAY.getDate()-i); days.push(d); }
   const studiedDays = new Set(state.logs.map(l=>l.date));
-  const todayKey = TODAY.toISOString().slice(0,10);
+  const todayKey = localDateStr(TODAY);
   const startDay = (days[0].getDay()+6)%7; // 月曜始まりオフセット
   let html = '';
   for(let i=0;i<startDay;i++) html+='<div></div>';
   days.forEach(d=>{
-    const key = d.toISOString().slice(0,10);
+    const key = localDateStr(d);
     const isToday = key===todayKey;
     const studied = studiedDays.has(key);
     const label = d.getDate();
@@ -1548,19 +1576,71 @@ function renderSubjects() {
   });
 }
 
-function renderLog() {
-  const el = document.getElementById('log-list');
-  if(state.logs.length===0) { el.innerHTML='<div style="padding:20px;color:var(--muted);text-align:center;font-size:13px;">まだ記録がありません</div>'; return; }
+let logViewMode = 'weekly';
+function setLogViewMode(mode) {
+  logViewMode = mode;
+  document.querySelectorAll('#log-view-toggle .view-toggle-btn').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('data-mode')===mode);
+  });
+  renderLog();
+}
+
+function buildFlatListHTML() {
+  if (state.logs.length===0) return '<div style="padding:20px;color:var(--muted);text-align:center;font-size:13px;">まだ記録がありません</div>';
   const sorted = [...state.logs].sort((a,b)=>b.date.localeCompare(a.date));
-  el.innerHTML = sorted.map((l,i)=>{
+  return sorted.map(l=>{
     const ridx = state.logs.indexOf(l);
     return `<div class="log-row">
       <div class="log-date">${l.date.slice(5)}</div>
-      <div class="log-subject">${l.subject}${l.memo?'<div style="color:var(--dimmed);font-size:11px;">'+l.memo+'</div>':''}</div>
+      <div class="log-subject">${l.subject}${l.memo?'<div style="color:var(--dimmed);font-size:11px;">'+escapeHtml(l.memo)+'</div>':''}</div>
       <div class="log-mins">${l.mins}分</div>
       <button class="log-del" onclick="deleteLog(${ridx})" title="削除">✕</button>
     </div>`;
   }).join('');
+}
+
+function buildWeeklyGroupHTML() {
+  if (state.logs.length===0) return '<div style="padding:20px;color:var(--muted);text-align:center;font-size:13px;">まだ記録がありません</div>';
+  // 週（月曜始まり）ごとにグループ化
+  const groups = {};
+  state.logs.forEach(l=>{
+    const d = new Date(l.date+'T00:00:00');
+    const monKey = localDateStr(mondayOf(d));
+    if (!groups[monKey]) groups[monKey] = [];
+    groups[monKey].push(l);
+  });
+  const weekKeys = Object.keys(groups).sort((a,b)=>b.localeCompare(a));
+  const thisWeekKey = localDateStr(mondayOf(TODAY));
+
+  return weekKeys.map((wk,gi)=>{
+    const monD = new Date(wk+'T00:00:00');
+    const sunD = new Date(monD); sunD.setDate(monD.getDate()+6);
+    const entries = [...groups[wk]].sort((a,b)=>b.date.localeCompare(a.date));
+    const weekMinsTotal = entries.reduce((s,l)=>s+l.mins,0);
+    const daysCount = new Set(entries.map(l=>l.date)).size;
+    const rows = entries.map(l=>{
+      const ridx = state.logs.indexOf(l);
+      return `<div class="log-row">
+        <div class="log-date">${l.date.slice(5)}</div>
+        <div class="log-subject">${l.subject}${l.memo?'<div style="color:var(--dimmed);font-size:11px;">'+escapeHtml(l.memo)+'</div>':''}</div>
+        <div class="log-mins">${l.mins}分</div>
+        <button class="log-del" onclick="deleteLog(${ridx})" title="削除">✕</button>
+      </div>`;
+    }).join('');
+    const isThisWeek = wk === thisWeekKey;
+    return `<details class="log-week-group"${gi===0?' open':''}>
+      <summary class="log-week-summary">
+        <span class="log-week-range"><span class="chevron">▸</span>${fmtMD(monD)}〜${fmtMD(sunD)}週${isThisWeek?' <span class="badge badge-blue" style="margin-left:2px;">今週</span>':''}</span>
+        <span class="log-week-total">${(weekMinsTotal/60).toFixed(1)}h ・ ${daysCount}日 ・ ${entries.length}件</span>
+      </summary>
+      <div class="log-week-body">${rows}</div>
+    </details>`;
+  }).join('');
+}
+
+function renderLog() {
+  const el = document.getElementById('log-list');
+  el.innerHTML = logViewMode==='weekly' ? buildWeeklyGroupHTML() : buildFlatListHTML();
 
   const totals = {};
   state.logs.forEach(l=>{ totals[l.subject]=(totals[l.subject]||0)+l.mins; });
@@ -1600,9 +1680,9 @@ function renderWeekSummary() {
   let html='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;">';
   for(let i=0;i<7;i++){
     const d=new Date(mon); d.setDate(mon.getDate()+i);
-    const key=d.toISOString().slice(0,10);
+    const key=localDateStr(d);
     const mins=state.logs.filter(l=>l.date===key).reduce((s,l)=>s+l.mins,0);
-    const isToday=key===TODAY.toISOString().slice(0,10);
+    const isToday=key===localDateStr(TODAY);
     const isFuture=d>TODAY;
     html+=`<div style="text-align:center;">
       <div style="font-size:11px;color:${isToday?'var(--accent2)':'var(--dimmed)'};margin-bottom:4px;">${days[i]}</div>
@@ -1656,7 +1736,7 @@ function renderAll() {
 
 // modal
 function openModal() {
-  const d = new Date(); const key = d.toISOString().slice(0,10);
+  const d = new Date(); const key = localDateStr(d);
   document.getElementById('log-date').value = key;
   document.getElementById('modal').classList.add('open');
 }
