@@ -321,7 +321,7 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
         <div class="card-label">総学習時間</div>
         <div class="card-value" id="total-hours">0h</div>
         <div class="prog-wrap"><div class="prog-fill prog-green" id="prog-total" style="width:0%"></div></div>
-        <div class="card-sub-value">目標 150h</div>
+        <div class="card-sub-value">目標 360h</div>
       </div>
       <div class="card card-sm">
         <div class="card-label">今週の学習時間</div>
@@ -648,70 +648,105 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
   <!-- PLAN -->
   <div class="page" id="page-plan">
     <div class="page-title">学習計画</div>
-    <div class="page-sub">7月〜11月22日（試験日）の全体スケジュール</div>
+    <div class="page-sub">7月21日〜11月22日（試験日）の全体スケジュール（週20時間ベース／2026年7月15日改訂版）</div>
+
+    <div class="tip">総学習時間の見積り：週20時間 × 約18週 ＝ 概算360時間。専門「道路」は実務知識があるので深追いせず、施工計画・都市計画・建設環境など得意化しやすい分野に厚めに時間配分。基礎科目は「単位・意味から考える」方針を継続しつつ、物理・化学が絡む群は前提知識の補強ブロックを別途確保。適性科目は序盤に短期集中で片付けて以降は最小メンテナンス。</div>
 
     <div class="section-title">フェーズ概要</div>
     <div class="phase-row">
       <div class="phase-dot" style="background:var(--accent)"></div>
       <div class="phase-info">
-        <div class="phase-name">Phase 1 — 準備・全体把握</div>
-        <div class="phase-weeks">7月1日〜7月31日（4週間）</div>
+        <div class="phase-name">Phase 1 — 診断＋前提知識の棚卸し</div>
+        <div class="phase-weeks">7月21日〜8月9日（3週間）</div>
       </div>
       <div id="phase-status-0" class="phase-status"><span class="badge badge-gray">未開始</span></div>
     </div>
     <div class="phase-row">
       <div class="phase-dot" style="background:var(--accent2)"></div>
       <div class="phase-info">
-        <div class="phase-name">Phase 2 — 科目別 過去問演習</div>
-        <div class="phase-weeks">8月1日〜10月15日（10週間）</div>
+        <div class="phase-name">Phase 2 — 基礎科目の土台作り＋前提知識の補強＋得意分野の固め</div>
+        <div class="phase-weeks">8月10日〜9月20日（6週間）</div>
       </div>
       <div id="phase-status-1" class="phase-status"><span class="badge badge-gray">未開始</span></div>
     </div>
     <div class="phase-row">
       <div class="phase-dot" style="background:var(--accent3)"></div>
       <div class="phase-info">
-        <div class="phase-name">Phase 3 — 弱点強化・模擬試験</div>
-        <div class="phase-weeks">10月16日〜11月15日（4週間）</div>
+        <div class="phase-name">Phase 3 — 専門科目の未知分野の開拓（深め）</div>
+        <div class="phase-weeks">9月21日〜10月25日（5週間）</div>
       </div>
       <div id="phase-status-2" class="phase-status"><span class="badge badge-gray">未開始</span></div>
     </div>
     <div class="phase-row">
       <div class="phase-dot" style="background:var(--accent4)"></div>
       <div class="phase-info">
-        <div class="phase-name">Phase 4 — 直前 仕上げ</div>
-        <div class="phase-weeks">11月16日〜11月21日（1週間）</div>
+        <div class="phase-name">Phase 4 — 本番形式演習＋弱点の再周回</div>
+        <div class="phase-weeks">10月26日〜11月15日（3週間）</div>
       </div>
       <div id="phase-status-3" class="phase-status"><span class="badge badge-gray">未開始</span></div>
     </div>
+    <div class="phase-row">
+      <div class="phase-dot" style="background:#a78bfa"></div>
+      <div class="phase-info">
+        <div class="phase-name">Phase 5 — 最終週</div>
+        <div class="phase-weeks">11月16日〜11月22日（試験当日）</div>
+      </div>
+      <div id="phase-status-4" class="phase-status"><span class="badge badge-gray">未開始</span></div>
+    </div>
 
-    <div class="section-title">フェーズ別 詳細タスク</div>
+    <div class="section-title">フェーズ別 詳細タスク（Exit基準つき）</div>
     <div class="card" style="font-size:13px;line-height:1.9;">
-      <div style="margin-bottom:16px;">
-        <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">Phase 1（7月）— 全体把握・診断</div>
-        <div style="color:var(--muted);">・過去問1年分を解いて自分の実力と弱点を把握（答え見てOK）</div>
-        <div style="color:var(--muted);">・適性科目の過去問3年分を一周（倫理感覚を養う）</div>
-        <div style="color:var(--muted);">・専門科目（建設）の参考書をサラッと通読</div>
-        <div style="color:var(--muted);">・基礎科目の5群を確認し、捨て群と攻略群を決める</div>
+      <div style="margin-bottom:18px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">Phase 1（7/21〜8/9）— 現在地の可視化、適性科目を先に片付け、物理・数学の抜けを洗い出す</div>
+        <div style="color:var(--muted);">・適性科目：過去4〜5年分を解く→倫理綱領を読み込み、間違いパターンを確認</div>
+        <div style="color:var(--muted);">・基礎科目：過去3〜4年分を解き、5群ごとの正答率を記録</div>
+        <div style="color:var(--muted);">・専門科目：過去2年分を解き、11分野の得意/不得意を可視化</div>
+        <div style="color:var(--muted);">・中学〜高校レベルの物理（力・仕事・エネルギー・電気）を棚卸しし、抜けている単元をリスト化</div>
+        <div style="color:var(--accent);font-size:12px;margin-top:6px;">Exit基準：全科目・全分野の「現時点の正答率」と「物理の抜け単元リスト」がトラッカーに記録されている</div>
       </div>
-      <div style="margin-bottom:16px;">
-        <div style="font-weight:700;color:var(--accent2);margin-bottom:6px;">Phase 2（8〜10月中旬）— 過去問集中</div>
-        <div style="color:var(--muted);">・専門科目 過去5年分を3周（毎日30分以上）</div>
-        <div style="color:var(--muted);">・基礎科目（選択3群）過去5年分を2周</div>
-        <div style="color:var(--muted);">・適性科目 週1回ペースで1年分解いて精度維持</div>
-        <div style="color:var(--muted);">・解説を熟読して「なぜ正解か」を理解する</div>
+      <div style="margin-bottom:18px;">
+        <div style="font-weight:700;color:var(--accent2);margin-bottom:6px;">Phase 2（8/10〜9/20）— 基礎科目を「単位・意味から考える」で攻略しつつ、3群・4群に必要な前提知識を独立ブロックで補強</div>
+        <div style="color:var(--muted);">・基礎科目：過去10年分を「群」ごとに周回。1問ごとに「なぜこの単位になるか」を書き出すノート作成</div>
+        <div style="color:var(--muted);">・週1回、物理・化学の前提知識補強セッションを独立して確保（Phase1で洗い出した抜け単元から）</div>
+        <div style="color:var(--muted);">・専門科目：道路／施工計画・施工設備・積算／都市及び地方計画／建設環境から着手</div>
+        <div style="color:var(--accent2);font-size:12px;margin-top:6px;">Exit基準：基礎科目5群それぞれ正答率70%超／専門科目の着手4分野で90%超</div>
       </div>
-      <div style="margin-bottom:16px;">
-        <div style="font-weight:700;color:var(--accent3);margin-bottom:6px;">Phase 3（10月中旬〜11月中旬）— 模擬試験</div>
-        <div style="color:var(--muted);">・本番形式（時間計測）で模擬試験を3回実施</div>
-        <div style="color:var(--muted);">・間違えた問題だけを集めた「弱点ノート」を回す</div>
-        <div style="color:var(--muted);">・専門科目を過去8年分に拡張</div>
+      <div style="margin-bottom:18px;">
+        <div style="font-weight:700;color:var(--accent3);margin-bottom:6px;">Phase 3（9/21〜10/25）— 実務で触れていない分野を、生存ラインではなく安定して解けるレベルまで引き上げる</div>
+        <div style="color:var(--muted);">・河川砂防及び海岸・海洋／港湾及び空港／電力土木／鉄道／トンネル／土質及び基礎／鋼構造及びコンクリートを過去問7〜8年分×1周＋2周目で誤答のみ再演習＋用語暗記カード化</div>
+        <div style="color:var(--muted);">・基礎科目は苦手の残る群のみ継続、得意群は週1回の維持演習</div>
+        <div style="color:var(--accent3);font-size:12px;margin-top:6px;">Exit基準：専門科目11分野すべてで正答率70〜80%超</div>
+      </div>
+      <div style="margin-bottom:18px;">
+        <div style="font-weight:700;color:var(--accent4);margin-bottom:6px;">Phase 4（10/26〜11/15）— 時間内に解く感覚の獲得、間違いの「型」を潰し切る</div>
+        <div style="color:var(--muted);">・週2〜3回、本番と同じ時間割（午前：基礎60分＋適性60分、午後：専門120分）で通し演習</div>
+        <div style="color:var(--muted);">・間違いは「知識不足／計算ミス／時間切れ／勘違い」に分類して記録</div>
+        <div style="color:var(--muted);">・時間に余裕があるため、直近2〜3年分の過去問を複数周回</div>
+        <div style="color:var(--accent4);font-size:12px;margin-top:6px;">Exit基準：直近の演習で基礎60%超・適性80%超・専門70%超を安定して達成</div>
       </div>
       <div>
-        <div style="font-weight:700;color:var(--accent4);margin-bottom:6px;">Phase 4（11月16〜21日）— 直前仕上げ</div>
-        <div style="color:var(--muted);">・新しい知識より弱点ノートの復習に集中</div>
-        <div style="color:var(--muted);">・試験当日のタイムマネジメントを確認</div>
-        <div style="color:var(--muted);">・適性科目を最終確認（法令の確認）</div>
+        <div style="font-weight:700;color:#a78bfa;margin-bottom:6px;">Phase 5（11/16〜11/22）— 消化不良を残さず当日を迎える</div>
+        <div style="color:var(--muted);">・新規問題は増やさず復習中心。暗記カード総復習</div>
+        <div style="color:var(--muted);">・会場までの動線・持ち物確認</div>
+        <div style="color:var(--muted);">・前日はほぼ休息</div>
       </div>
+    </div>
+
+    <div class="section-title">週間ルーティン（週20時間の目安）</div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div id="weekly-routine-table"></div>
+    </div>
+    <div class="tip" style="margin-top:0;">平日5日で10時間、週末2日で10時間の配分。ただし「毎日2時間」を機械的に守るより、平日は最低1時間は死守しつつ余力がある日に上乗せする方が仕事の繁忙に強い。20時間は跳ね上がりなので、最初の2週間は実際に確保できた時間を正直にトラッカーへ記録し、Phase1終了時点（8/9頃）で本当に週20時間が回っているか検証しよう。</div>
+
+    <div class="section-title">本番形式模試（3回）</div>
+    <div class="card" id="mock-exam-list"></div>
+
+    <div class="section-title">振り返りの4層</div>
+    <div class="card" style="font-size:13px;line-height:1.9;color:var(--muted);">
+      <div>・毎週：ミニ振り返り（15分）— 今週解いた問題数・分野別正答率、間違いパターンTOP3、来週の重点分野</div>
+      <div>・隔週：中振り返り（30分）— フェーズのExit基準に対する進捗を数値で確認し、停滞分野は演習量でなく理解の仕方を見直す</div>
+      <div>・フェーズ境目：Exit基準の判定 — 未達なら次フェーズの着手を1週遅らせてでも埋める（Phase5は削らない）</div>
+      <div>・本番形式模試：3回（8月末・9月末・10月末）で伸びと停滞を比較</div>
     </div>
   </div>
 
@@ -863,14 +898,59 @@ const TODAY = new Date();
 TODAY.setHours(0,0,0,0);
 
 const PHASES = [
-  { name:'準備・全体把握', start:new Date('2026-07-01'), end:new Date('2026-07-31'), color:'var(--accent)',
-    tasks:['過去問1年分を解いて弱点を把握（答え見てOK）','適性科目の過去問3年分を一周','専門科目（建設）の参考書を通読','基礎科目：攻略する3群を決める'] },
-  { name:'科目別 過去問演習', start:new Date('2026-08-01'), end:new Date('2026-10-15'), color:'var(--accent2)',
-    tasks:['専門科目（建設）過去5年分を繰り返し解く','基礎科目（選択3群）過去5年分を2周','適性科目を週1回ペースで維持','解説を熟読して「なぜ正解か」を理解する'] },
-  { name:'弱点強化・模擬試験', start:new Date('2026-10-16'), end:new Date('2026-11-15'), color:'var(--accent3)',
-    tasks:['本番形式の模擬試験を3回実施','間違えた問題だけを「弱点ノート」で回す','専門科目を過去8年分に拡張','苦手分野の参考書で補強'] },
-  { name:'直前 仕上げ', start:new Date('2026-11-16'), end:new Date('2026-11-21'), color:'var(--accent4)',
-    tasks:['新しい知識より弱点ノートの復習','試験当日のタイムマネジメントを確認','適性科目の法令を最終確認','十分な睡眠と体調管理！'] },
+  { name:'診断＋前提知識の棚卸し', start:new Date('2026-07-21'), end:new Date('2026-08-09'), color:'var(--accent)',
+    tasks:[
+      '適性科目：過去4〜5年分を解く→倫理綱領を読み込み、間違いパターンを確認',
+      '基礎科目：過去3〜4年分を解き、5群ごとの正答率を記録',
+      '専門科目：過去2年分を解き、11分野の得意/不得意を可視化',
+      '中学〜高校レベルの物理（力・仕事・エネルギー・電気）を棚卸しし、抜けている単元をリスト化'
+    ],
+    exit:'全科目・全分野の「現時点の正答率」と「物理の抜け単元リスト」がトラッカーに記録されている' },
+  { name:'基礎科目の土台作り＋前提知識の補強＋得意分野の固め', start:new Date('2026-08-10'), end:new Date('2026-09-20'), color:'var(--accent2)',
+    tasks:[
+      '基礎科目：過去10年分を「群」ごとに周回。1問ごとに「なぜこの単位になるか」を書き出すノート作成',
+      '週1回、物理・化学の前提知識補強セッションを独立して確保（Phase1で洗い出した抜け単元から）',
+      '専門科目：道路／施工計画・施工設備・積算／都市及び地方計画／建設環境から着手'
+    ],
+    exit:'基礎科目5群それぞれ正答率70%超／専門科目の着手4分野で90%超' },
+  { name:'専門科目の未知分野の開拓（深め）', start:new Date('2026-09-21'), end:new Date('2026-10-25'), color:'var(--accent3)',
+    tasks:[
+      '河川砂防及び海岸・海洋／港湾及び空港／電力土木／鉄道／トンネル／土質及び基礎／鋼構造及びコンクリートを過去問7〜8年分×1周＋2周目で誤答のみ再演習＋用語暗記カード化',
+      '基礎科目は苦手の残る群のみ継続、得意群は週1回の維持演習'
+    ],
+    exit:'専門科目11分野すべてで正答率70〜80%超' },
+  { name:'本番形式演習＋弱点の再周回', start:new Date('2026-10-26'), end:new Date('2026-11-15'), color:'var(--accent4)',
+    tasks:[
+      '週2〜3回、本番と同じ時間割（午前：基礎60分＋適性60分、午後：専門120分）で通し演習',
+      '間違いは「知識不足／計算ミス／時間切れ／勘違い」に分類して記録',
+      '時間に余裕があるため、直近2〜3年分の過去問を複数周回'
+    ],
+    exit:'直近の演習で基礎60%超・適性80%超・専門70%超を安定して達成' },
+  { name:'最終週', start:new Date('2026-11-16'), end:new Date('2026-11-22'), color:'#a78bfa',
+    tasks:[
+      '新規問題は増やさず復習中心。暗記カード総復習',
+      '会場までの動線・持ち物確認',
+      '前日はほぼ休息'
+    ],
+    exit:'―（消化不良を残さず当日を迎える）' },
+];
+
+// 本番形式模試の実施予定（3回）
+const MOCK_EXAMS = [
+  { label:'1回目', date:'8/9頃（Phase1終了時点）', purpose:'ベースラインの確定。以降の伸びを測る基準点にする' },
+  { label:'2回目', date:'9/20頃（Phase2終了時点）', purpose:'基礎科目の伸びを測る。1回目からの変化を比較' },
+  { label:'3回目', date:'10/25頃（Phase3終了時点）', purpose:'専門科目11分野を通しで解き、抜けている分野を最終特定' },
+];
+
+// 週間ルーティン（週20時間の目安）
+const WEEKLY_ROUTINE = [
+  { day:'月', content:'過去問演習（基礎科目・その週の重点群）', hours:'2時間' },
+  { day:'火', content:'過去問演習（専門科目・その週の重点分野）', hours:'2時間' },
+  { day:'水', content:'「単位から考える」ノート整理／物理・化学の前提知識補強（Phase2以降）', hours:'2時間' },
+  { day:'木', content:'過去問演習（適性科目 or 専門科目の苦手分野）', hours:'2時間' },
+  { day:'金', content:'誤答の再演習＋暗記カード更新（新規は増やさず、間違いの解消に充てる）', hours:'2時間' },
+  { day:'土', content:'まとめ演習：本番の科目配分に近い形で過去問1年分＋解説の読み込み', hours:'5時間' },
+  { day:'日', content:'週次振り返り＋誤答の深掘り＋来週の重点分野決め', hours:'5時間' },
 ];
 
 const SUBJECT_NAMES = ['適性科目','基礎科目（環境・エネルギー）','基礎科目（材料・化学）','基礎科目（情報・論理）','専門科目（土質・基礎）','専門科目（道路・橋梁）','専門科目（河川・水文）','専門科目（都市計画・施工）'];
@@ -895,14 +975,14 @@ let state = JSON.parse(localStorage.getItem('gijutsushi-state') || 'null') || {
   pastExams: {},
   weeklyReviews: [],
   biweeklyReviews: [],
-  weeklyGoalHours: 10,
+  weeklyGoalHours: 20,
   customTasks: []
 };
 // 既存データに新フィールドが無い場合の補完（過去バージョンからの移行）
 if(!state.pastExams) state.pastExams = {};
 if(!state.weeklyReviews) state.weeklyReviews = [];
 if(!state.biweeklyReviews) state.biweeklyReviews = [];
-if(!state.weeklyGoalHours) state.weeklyGoalHours = 10;
+if(!state.weeklyGoalHours) state.weeklyGoalHours = 20;
 if(!state.customTasks) state.customTasks = [];
 
 function save() { localStorage.setItem('gijutsushi-state', JSON.stringify(state)); }
@@ -1352,7 +1432,7 @@ function editGoal() {
 function renderDashboard() {
   const totalH = totalMins()/60;
   document.getElementById('total-hours').textContent = totalH.toFixed(1)+'h';
-  document.getElementById('prog-total').style.width = Math.min(100, totalH/150*100)+'%';
+  document.getElementById('prog-total').style.width = Math.min(100, totalH/360*100)+'%';
 
   const weekH = weekMins()/60;
   document.getElementById('week-hours').textContent = weekH.toFixed(1)+'h';
@@ -1412,15 +1492,15 @@ function renderTodayTasks(elId) {
   const phLabel = document.getElementById('today-phase-label');
   const phInfo = document.getElementById('today-phase-info');
   if (ph < 0) {
-    if(phLabel) phLabel.textContent = '〜 7月開始まで準備期間';
-    if(phInfo) phInfo.textContent = '📋 参考書を1冊購入し、試験の全体像をつかんでおこう。';
+    if(phLabel) phLabel.textContent = '〜 7月21日のPhase1開始まで準備期間';
+    if(phInfo) phInfo.textContent = '📋 今週（7/15〜7/20）にやること：①適性科目の過去問1年分を解いてみる（時間は測らなくてOK）②トラッカーの「過去問管理」に分野別正答率を記録する準備をする③日本技術士会HPから過去問と正答をダウンロードし、年度別にフォルダ分けする。';
   } else if (ph >= PHASES.length) {
     if(phLabel) phLabel.textContent = '試験期間終了';
     if(phInfo) phInfo.textContent = '🎉 試験お疲れさまでした！合格発表を待ちましょう。';
   } else {
     const phase = PHASES[ph];
     if(phLabel) phLabel.textContent = `Phase ${ph+1} — ${phase.name}`;
-    if(phInfo) phInfo.textContent = `現在 Phase ${ph+1}「${phase.name}」です。${phase.end.toLocaleDateString('ja-JP',{month:'long',day:'numeric'})}まで。`;
+    if(phInfo) phInfo.textContent = `現在 Phase ${ph+1}「${phase.name}」です。${phase.end.toLocaleDateString('ja-JP',{month:'long',day:'numeric'})}まで。Exit基準：${phase.exit}`;
   }
   el.innerHTML = renderCustomTasksHTML();
 }
@@ -1538,6 +1618,31 @@ function renderWeekSummary() {
   el.innerHTML=html;
 }
 
+function renderPlanExtras() {
+  const rt = document.getElementById('weekly-routine-table');
+  if (rt) {
+    rt.innerHTML = WEEKLY_ROUTINE.map(r=>`
+      <div class="log-row" style="align-items:flex-start;">
+        <div class="log-date" style="width:28px;color:var(--accent2);font-weight:700;">${r.day}</div>
+        <div class="log-subject" style="flex:1;">${r.content}</div>
+        <div class="log-mins" style="width:56px;">${r.hours}</div>
+      </div>
+    `).join('');
+  }
+  const me = document.getElementById('mock-exam-list');
+  if (me) {
+    me.innerHTML = MOCK_EXAMS.map(m=>`
+      <div style="display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="font-family:var(--mono);color:var(--accent3);font-weight:700;width:52px;flex-shrink:0;">${m.label}</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;">${m.date}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">${m.purpose}</div>
+        </div>
+      </div>
+    `).join('') + '<div style="font-size:11.5px;color:var(--dimmed);margin-top:8px;">※ Phase4中（11/8頃）に時間があれば4回目を追加してもよいが必須ではない</div>';
+  }
+}
+
 function renderAll() {
   renderDashboard();
   renderTodayTasks('today-tasks-2');
@@ -1546,6 +1651,7 @@ function renderAll() {
   renderLog();
   renderPastExams();
   renderReviews();
+  renderPlanExtras();
 }
 
 // modal
