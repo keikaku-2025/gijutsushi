@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>技術士一次試験 学習トラッカー</title>
 
 <!-- スマホのホーム画面に追加してアプリのように使うための設定 -->
@@ -36,7 +36,7 @@
   --mono: 'DM Mono', monospace;
   --sans: 'Noto Sans JP', sans-serif;
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
 body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; font-size: 14px; line-height: 1.6; }
 
 /* layout */
@@ -172,7 +172,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
 .form-group { margin-bottom: 14px; }
 .form-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; }
-.form-select, .form-input, .form-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text); font-family: var(--sans); font-size: 13px; padding: 9px 12px; }
+.form-select, .form-input, .form-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text); font-family: var(--sans); font-size: 16px; padding: 9px 12px; }
 .form-textarea { resize: vertical; min-height: 64px; font-family: var(--sans); }
 .form-select:focus, .form-input:focus, .form-textarea:focus { outline: none; border-color: var(--accent); }
 .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
@@ -851,7 +851,7 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
 <!-- MODAL: 学習記録 -->
 <div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
   <div class="modal">
-    <div class="modal-title">学習を記録する</div>
+    <div class="modal-title" id="log-modal-title">学習を記録する</div>
     <div class="form-group">
       <label class="form-label">日付</label>
       <input class="form-input" type="date" id="log-date">
@@ -860,9 +860,11 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
       <label class="form-label">科目</label>
       <select class="form-select" id="log-subject">
         <option value="適性科目">適性科目</option>
+        <option value="基礎科目（過去問）">基礎科目（過去問・分野横断）</option>
         <option value="基礎科目（環境・エネルギー）">基礎科目（環境・エネルギー）</option>
         <option value="基礎科目（材料・化学）">基礎科目（材料・化学）</option>
         <option value="基礎科目（情報・論理）">基礎科目（情報・論理）</option>
+        <option value="専門科目（過去問）">専門科目（過去問・分野横断）</option>
         <option value="専門科目（土質・基礎）">専門科目（土質・基礎）</option>
         <option value="専門科目（道路・橋梁）">専門科目（道路・橋梁）</option>
         <option value="専門科目（河川・水文）">専門科目（河川・水文）</option>
@@ -879,7 +881,7 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
       <input class="form-input" type="text" id="log-memo" placeholder="例：過去問H30年を解いた">
     </div>
     <div class="modal-actions">
-      <button class="log-btn" onclick="saveLog()" style="flex:1;">保存する</button>
+      <button class="log-btn" onclick="saveLog()" id="log-save-btn" style="flex:1;">保存する</button>
       <button class="log-btn btn-gray" onclick="closeModal()">キャンセル</button>
     </div>
   </div>
@@ -1594,6 +1596,7 @@ function buildFlatListHTML() {
       <div class="log-date">${l.date.slice(5)}</div>
       <div class="log-subject">${l.subject}${l.memo?'<div style="color:var(--dimmed);font-size:11px;">'+escapeHtml(l.memo)+'</div>':''}</div>
       <div class="log-mins">${l.mins}分</div>
+      <button class="log-del" onclick="openEditLogModal(${ridx})" title="編集">✎</button>
       <button class="log-del" onclick="deleteLog(${ridx})" title="削除">✕</button>
     </div>`;
   }).join('');
@@ -1624,6 +1627,7 @@ function buildWeeklyGroupHTML() {
         <div class="log-date">${l.date.slice(5)}</div>
         <div class="log-subject">${l.subject}${l.memo?'<div style="color:var(--dimmed);font-size:11px;">'+escapeHtml(l.memo)+'</div>':''}</div>
         <div class="log-mins">${l.mins}分</div>
+        <button class="log-del" onclick="openEditLogModal(${ridx})" title="編集">✎</button>
         <button class="log-del" onclick="deleteLog(${ridx})" title="削除">✕</button>
       </div>`;
     }).join('');
@@ -1735,9 +1739,28 @@ function renderAll() {
 }
 
 // modal
+let editingLogIndex = null;
 function openModal() {
+  editingLogIndex = null;
+  document.getElementById('log-modal-title').textContent = '学習を記録する';
+  document.getElementById('log-save-btn').textContent = '保存する';
   const d = new Date(); const key = localDateStr(d);
   document.getElementById('log-date').value = key;
+  document.getElementById('log-subject').selectedIndex = 0;
+  document.getElementById('log-mins').value = 60;
+  document.getElementById('log-memo').value = '';
+  document.getElementById('modal').classList.add('open');
+}
+function openEditLogModal(i) {
+  const l = state.logs[i];
+  if (!l) return;
+  editingLogIndex = i;
+  document.getElementById('log-modal-title').textContent = '学習記録を編集';
+  document.getElementById('log-save-btn').textContent = '更新する';
+  document.getElementById('log-date').value = l.date;
+  document.getElementById('log-subject').value = l.subject;
+  document.getElementById('log-mins').value = l.mins;
+  document.getElementById('log-memo').value = l.memo || '';
   document.getElementById('modal').classList.add('open');
 }
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
@@ -1748,8 +1771,13 @@ function saveLog() {
   const mins = parseInt(document.getElementById('log-mins').value)||0;
   const memo = document.getElementById('log-memo').value.trim();
   if(!date||mins<=0) return;
-  state.logs.push({date,subject,mins,memo});
-  document.getElementById('log-memo').value='';
+  if (editingLogIndex !== null) {
+    state.logs[editingLogIndex] = {date,subject,mins,memo};
+    showToast('記録を更新しました');
+  } else {
+    state.logs.push({date,subject,mins,memo});
+    showToast('記録を保存しました');
+  }
   save(); closeModal(); renderAll();
 }
 function deleteLog(i) { state.logs.splice(i,1); save(); renderAll(); }
