@@ -507,66 +507,21 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
       </div>
       <div class="subject-row" onclick="editSubject(1)">
         <div>
-          <div class="subject-name">基礎科目 — 環境・エネルギー群</div>
-          <div class="subject-desc">5群中 最も文系向き</div>
+          <div class="subject-name">基礎科目</div>
+          <div class="subject-desc">5群（設計・計画／情報・論理／解析／材料・化学・バイオ／環境・エネルギー・技術）の総合</div>
         </div>
         <div class="subject-pct" id="s-pct-1" style="color:var(--accent3)">0%</div>
-        <div class="subject-star">★☆☆</div>
+        <div class="subject-star">★★☆</div>
         <div id="s-badge-1"><span class="badge badge-gray">未着手</span></div>
       </div>
       <div class="subject-row" onclick="editSubject(2)">
         <div>
-          <div class="subject-name">基礎科目 — 材料・化学群</div>
-          <div class="subject-desc">暗記系が多い</div>
+          <div class="subject-name">専門科目（建設部門）</div>
+          <div class="subject-desc">実務経験（道路設計）が活きる最重要科目</div>
         </div>
-        <div class="subject-pct" id="s-pct-2" style="color:var(--accent3)">0%</div>
-        <div class="subject-star">★★☆</div>
+        <div class="subject-pct" id="s-pct-2" style="color:var(--accent4)">0%</div>
+        <div class="subject-star">★★★</div>
         <div id="s-badge-2"><span class="badge badge-gray">未着手</span></div>
-      </div>
-      <div class="subject-row" onclick="editSubject(3)">
-        <div>
-          <div class="subject-name">基礎科目 — 情報・論理群</div>
-          <div class="subject-desc">パターンで解ける</div>
-        </div>
-        <div class="subject-pct" id="s-pct-3" style="color:var(--accent3)">0%</div>
-        <div class="subject-star">★★☆</div>
-        <div id="s-badge-3"><span class="badge badge-gray">未着手</span></div>
-      </div>
-      <div class="subject-row" onclick="editSubject(4)">
-        <div>
-          <div class="subject-name">専門科目（建設部門）— 土質・基礎</div>
-          <div class="subject-desc">頻出・過去問パターン多め</div>
-        </div>
-        <div class="subject-pct" id="s-pct-4" style="color:var(--accent4)">0%</div>
-        <div class="subject-star">★★★</div>
-        <div id="s-badge-4"><span class="badge badge-gray">未着手</span></div>
-      </div>
-      <div class="subject-row" onclick="editSubject(5)">
-        <div>
-          <div class="subject-name">専門科目（建設部門）— 道路・橋梁</div>
-          <div class="subject-desc">実務経験が活きる分野</div>
-        </div>
-        <div class="subject-pct" id="s-pct-5" style="color:var(--accent4)">0%</div>
-        <div class="subject-star">★★★</div>
-        <div id="s-badge-5"><span class="badge badge-gray">未着手</span></div>
-      </div>
-      <div class="subject-row" onclick="editSubject(6)">
-        <div>
-          <div class="subject-name">専門科目（建設部門）— 河川・水文</div>
-          <div class="subject-desc">計算多め・公式暗記で対応</div>
-        </div>
-        <div class="subject-pct" id="s-pct-6" style="color:var(--accent4)">0%</div>
-        <div class="subject-star">★★★</div>
-        <div id="s-badge-6"><span class="badge badge-gray">未着手</span></div>
-      </div>
-      <div class="subject-row" onclick="editSubject(7)">
-        <div>
-          <div class="subject-name">専門科目（建設部門）— 都市計画・施工</div>
-          <div class="subject-desc">法令・計画系が多い</div>
-        </div>
-        <div class="subject-pct" id="s-pct-7" style="color:var(--accent4)">0%</div>
-        <div class="subject-star">★★☆</div>
-        <div id="s-badge-7"><span class="badge badge-gray">未着手</span></div>
       </div>
     </div>
   </div>
@@ -976,8 +931,8 @@ const WEEKLY_ROUTINE = [
   { day:'日', content:'週次振り返り＋誤答の深掘り＋来週の重点分野決め', hours:'5時間' },
 ];
 
-const SUBJECT_NAMES = ['適性科目','基礎科目（環境・エネルギー）','基礎科目（材料・化学）','基礎科目（情報・論理）','専門科目（土質・基礎）','専門科目（道路・橋梁）','専門科目（河川・水文）','専門科目（都市計画・施工）'];
-const SUBJECT_SHORT = ['適性','環境ｴﾈﾙｷﾞｰ','材料化学','情報論理','土質基礎','道路橋梁','河川水文','都市施工'];
+const SUBJECT_NAMES = ['適性科目','基礎科目','専門科目（建設部門）'];
+const SUBJECT_SHORT = ['適性','基礎','建設'];
 
 // 過去問マトリクス対象年度（新しい順）
 const EXAM_YEARS = [
@@ -993,7 +948,7 @@ const EXAM_YEARS = [
 
 let state = JSON.parse(localStorage.getItem('gijutsushi-state') || 'null') || {
   logs: [],
-  subjects: [0,0,0,0,0,0,0,0],
+  subjects: [0,0,0],
   tasksDone: {},
   pastExams: {},
   weeklyReviews: [],
@@ -1007,6 +962,19 @@ if(!state.weeklyReviews) state.weeklyReviews = [];
 if(!state.biweeklyReviews) state.biweeklyReviews = [];
 if(!state.weeklyGoalHours) state.weeklyGoalHours = 20;
 if(!state.customTasks) state.customTasks = [];
+// 科目カテゴリ変更の移行（旧：適性1+基礎3+専門4＝8 → 中間：適性1+基礎5群+専門1＝7 → 新：適性・基礎・建設＝3）
+if (state.subjects && state.subjects.length === 8) {
+  const old = state.subjects;
+  const kAvg = Math.round((old[1]+old[2]+old[3])/3);
+  const sAvg = Math.round((old[4]+old[5]+old[6]+old[7])/4);
+  state.subjects = [old[0], kAvg, kAvg, kAvg, kAvg, kAvg, sAvg];
+}
+if (state.subjects && state.subjects.length === 7) {
+  const old = state.subjects;
+  const kAvg = Math.round((old[1]+old[2]+old[3]+old[4]+old[5])/5);
+  state.subjects = [old[0], kAvg, old[6]];
+}
+if (!state.subjects || state.subjects.length !== 3) state.subjects = [0,0,0];
 
 function save() { localStorage.setItem('gijutsushi-state', JSON.stringify(state)); }
 
@@ -1162,8 +1130,8 @@ function subjectTotal(name) {
 function mogiCount() { return state.logs.filter(l=>l.subject==='模擬試験').length; }
 function subjectProgress() {
   const t = state.subjects[0];
-  const k = Math.round((state.subjects[1]+state.subjects[2]+state.subjects[3])/3);
-  const s = Math.round((state.subjects[4]+state.subjects[5]+state.subjects[6]+state.subjects[7])/4);
+  const k = state.subjects[1];
+  const s = state.subjects[2];
   return {t,k,s};
 }
 
@@ -1173,13 +1141,37 @@ function getYearData(yearKey) {
     state.pastExams[yearKey] = SUBJECT_NAMES.map(()=>[]);
   } else {
     // 旧形式（{attempted,correct}単体）からの移行
-    state.pastExams[yearKey] = state.pastExams[yearKey].map(cell=>{
+    let arr = state.pastExams[yearKey].map(cell=>{
       if (Array.isArray(cell)) return cell;
       if (cell && typeof cell==='object' && ('attempted' in cell)) {
         return (cell.attempted>0 || cell.correct>0) ? [{attempted:cell.attempted, correct:cell.correct, date:''}] : [];
       }
       return [];
     });
+    // 分野構成の変更（旧：適性1+基礎3+専門4＝8 → 中間：適性1+基礎5群+専門1＝7）への移行
+    if (arr.length === 8) {
+      arr = [
+        arr[0],           // 適性科目
+        [],               // 基礎1群：設計・計画（新規）
+        arr[3] || [],     // 基礎2群：情報・論理（旧：情報・論理）
+        [],               // 基礎3群：解析（新規）
+        arr[2] || [],     // 基礎4群：材料・化学・バイオ（旧：材料・化学）
+        arr[1] || [],     // 基礎5群：環境・エネルギー・技術（旧：環境・エネルギー）
+        [].concat(arr[4]||[], arr[5]||[], arr[6]||[], arr[7]||[]) // 専門科目（旧4分野を統合）
+      ];
+    }
+    // 分野構成の変更（中間：適性1+基礎5群+専門1＝7 → 新：適性・基礎・建設＝3）への移行
+    if (arr.length === 7) {
+      arr = [
+        arr[0],           // 適性科目
+        [].concat(arr[1]||[], arr[2]||[], arr[3]||[], arr[4]||[], arr[5]||[]), // 基礎科目（5群を統合）
+        arr[6] || []      // 専門科目（建設部門）
+      ];
+    }
+    // 長さが合わない場合は安全に切り詰め／埋める
+    while (arr.length < SUBJECT_NAMES.length) arr.push([]);
+    if (arr.length > SUBJECT_NAMES.length) arr = arr.slice(0, SUBJECT_NAMES.length);
+    state.pastExams[yearKey] = arr;
   }
   return state.pastExams[yearKey];
 }
