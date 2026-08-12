@@ -37,6 +37,7 @@
   --sans: 'Noto Sans JP', sans-serif;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
+html, body { overflow-x: hidden; width: 100%; }
 body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; font-size: 14px; line-height: 1.6; }
 
 /* layout */
@@ -464,6 +465,9 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
       <div class="task-list" id="today-tasks-2"></div>
     </div>
 
+    <div class="section-title">過去のタスク（完了した翌日から自動でここに移動）</div>
+    <div class="card" style="padding:4px 0;" id="task-history"></div>
+
     <div class="section-title">今週の達成状況（月曜始まり）</div>
     <div class="card">
       <div id="week-summary"></div>
@@ -788,14 +792,13 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
       <select class="form-select" id="log-subject">
         <option value="適性科目">適性科目</option>
         <option value="基礎科目（過去問）">基礎科目（過去問・分野横断）</option>
-        <option value="基礎科目（環境・エネルギー）">基礎科目（環境・エネルギー）</option>
-        <option value="基礎科目（材料・化学）">基礎科目（材料・化学）</option>
-        <option value="基礎科目（情報・論理）">基礎科目（情報・論理）</option>
+        <option value="基礎科目（1群：設計・計画）">基礎科目（1群：設計・計画）</option>
+        <option value="基礎科目（2群：情報・論理）">基礎科目（2群：情報・論理）</option>
+        <option value="基礎科目（3群：解析）">基礎科目（3群：解析）</option>
+        <option value="基礎科目（4群：材料・化学・バイオ）">基礎科目（4群：材料・化学・バイオ）</option>
+        <option value="基礎科目（5群：環境・エネルギー・技術）">基礎科目（5群：環境・エネルギー・技術）</option>
         <option value="専門科目（過去問）">専門科目（過去問・分野横断）</option>
-        <option value="専門科目（土質・基礎）">専門科目（土質・基礎）</option>
-        <option value="専門科目（道路・橋梁）">専門科目（道路・橋梁）</option>
-        <option value="専門科目（河川・水文）">専門科目（河川・水文）</option>
-        <option value="専門科目（都市計画・施工）">専門科目（都市計画・施工）</option>
+        <option value="専門科目（建設部門）">専門科目（建設部門）</option>
         <option value="模擬試験">模擬試験</option>
       </select>
     </div>
@@ -949,6 +952,12 @@ if(!state.weeklyReviews) state.weeklyReviews = [];
 if(!state.biweeklyReviews) state.biweeklyReviews = [];
 if(!state.weeklyGoalHours) state.weeklyGoalHours = 20;
 if(!state.customTasks) state.customTasks = [];
+// 既存タスクにdateが無い場合は今日の日付を補完（移行）
+// 既存タスクの移行：完了済みタスクは「完了日」を持たせて過去のものとして扱い、今日の欄に復活しないようにする
+state.customTasks.forEach(t=>{
+  if (!t.date) t.date = localDateStr(TODAY);
+  if (t.done && !t.doneDate) t.doneDate = t.date; // 完了済みだが完了日が無い＝今日ではなく元の作成日として扱う
+});
 // 科目カテゴリ変更の移行（旧：適性1+基礎3+専門4＝8 → 中間：適性1+基礎5群+専門1＝7 → 新：適性・基礎・建設＝3）
 if (state.subjects && state.subjects.length === 8) {
   const old = state.subjects;
@@ -1049,7 +1058,7 @@ function saveCustomTask() {
     save(); closeTaskModal(); renderAll();
     showToast('タスクを更新しました');
   } else {
-    state.customTasks.push({ id: Date.now()+'-'+Math.random().toString(36).slice(2,7), text, category: selectedTaskCategory, done:false });
+    state.customTasks.push({ id: Date.now()+'-'+Math.random().toString(36).slice(2,7), text, category: selectedTaskCategory, done:false, date: localDateStr(TODAY) });
     save(); closeTaskModal(); renderAll();
     showToast('タスクを追加しました');
   }
@@ -1062,7 +1071,11 @@ function deleteFromTaskModal() {
 }
 function toggleCustomTask(id) {
   const t = state.customTasks.find(t=>t.id===id);
-  if (t) { t.done = !t.done; save(); renderAll(); }
+  if (t) {
+    t.done = !t.done;
+    t.doneDate = t.done ? localDateStr(TODAY) : null;
+    save(); renderAll();
+  }
 }
 
 // ---- date helpers (月曜始まり) ----
@@ -1514,21 +1527,61 @@ function renderDashboard() {
 }
 
 function renderCustomTasksHTML() {
-  if (state.customTasks.length===0) {
+  const todayKey = localDateStr(TODAY);
+  // 未完了のタスクは作成日に関わらず継続表示。完了したタスクは完了した当日のみ表示し、翌日には履歴へ移動する
+  const todays = state.customTasks.filter(t=> !t.done || t.doneDate===todayKey);
+  // 未完了を先に、完了済み（今日中）を後ろに並べる
+  todays.sort((a,b)=> (a.done===b.done) ? 0 : (a.done ? 1 : -1));
+  if (todays.length===0) {
     return '<div style="color:var(--muted);font-size:13px;padding:8px 0;">「＋ タスク追加」から今日やることを登録しよう</div>';
   }
-  return state.customTasks.map(t=>{
+  return todays.map(t=>{
     const col = taskCatColor(t.category);
+    const carriedOver = !t.done && t.date && t.date!==todayKey;
     return `<div class="task-item${t.done?' done':''}">
       <div class="task-check" onclick="toggleCustomTask('${t.id}')">${t.done?'✓':''}</div>
       <div class="task-content" onclick="toggleCustomTask('${t.id}')">
         <div class="task-item-row">
           <div class="task-name">${escapeHtml(t.text)}</div>
         </div>
-        <div class="task-meta"><span class="task-cat-badge" style="background:${col.bg};color:${col.c}">${t.category}</span></div>
+        <div class="task-meta"><span class="task-cat-badge" style="background:${col.bg};color:${col.c}">${t.category}</span>${carriedOver?` <span style="color:var(--dimmed);">・${fmtMD(new Date(t.date+'T00:00:00'))}から未完了</span>`:''}</div>
       </div>
       <button class="task-del" onclick="event.stopPropagation();openEditTaskModal('${t.id}')" title="編集">✎</button>
     </div>`;
+  }).join('');
+}
+
+function renderTaskHistoryHTML() {
+  const todayKey = localDateStr(TODAY);
+  // 履歴＝完了済みで、完了日が今日ではないタスク（未完了のものは今日の欄に残り続けるため履歴には出さない）
+  const past = state.customTasks.filter(t=> t.done && t.doneDate && t.doneDate!==todayKey);
+  if (past.length===0) {
+    return '<div style="color:var(--muted);font-size:12.5px;padding:10px 2px;">まだ過去のタスク記録はありません</div>';
+  }
+  const groups = {};
+  past.forEach(t=>{ const k=t.doneDate; if(!groups[k]) groups[k]=[]; groups[k].push(t); });
+  const dateKeys = Object.keys(groups).sort((a,b)=>b.localeCompare(a));
+  return dateKeys.map(dk=>{
+    const items = groups[dk];
+    const dLabel = fmtMD(new Date(dk+'T00:00:00'));
+    const rows = items.map(t=>{
+      const col = taskCatColor(t.category);
+      return `<div class="task-item${t.done?' done':''}">
+        <div class="task-check" onclick="toggleCustomTask('${t.id}')">${t.done?'✓':''}</div>
+        <div class="task-content" onclick="toggleCustomTask('${t.id}')">
+          <div class="task-item-row"><div class="task-name">${escapeHtml(t.text)}</div></div>
+          <div class="task-meta"><span class="task-cat-badge" style="background:${col.bg};color:${col.c}">${t.category}</span></div>
+        </div>
+        <button class="task-del" onclick="event.stopPropagation();openEditTaskModal('${t.id}')" title="編集">✎</button>
+      </div>`;
+    }).join('');
+    return `<details class="log-week-group">
+      <summary class="log-week-summary">
+        <span class="log-week-range"><span class="chevron">▸</span>${dLabel}に完了</span>
+        <span class="log-week-total">${items.length}件</span>
+      </summary>
+      <div class="log-week-body" style="padding:6px 12px;">${rows}</div>
+    </details>`;
   }).join('');
 }
 
@@ -1539,7 +1592,7 @@ function renderTodayTasks(elId) {
   const phInfo = document.getElementById('today-phase-info');
   if (ph < 0) {
     if(phLabel) phLabel.textContent = '〜 7月21日のPhase1開始まで準備期間';
-    if(phInfo) phInfo.textContent = '📋 今週（7/15〜7/20）にやること：①適性科目の過去問1年分を解いてみる（時間は測らなくてOK）②トラッカーの「過去問管理」に分野別正答率を記録する準備をする③日本技術士会HPから過去問と正答をダウンロードし、年度別にフォルダ分けする。';
+    if(phInfo) phInfo.textContent = '📋 参考書を1冊決めて、試験の全体像をつかんでおく準備期間です。適性科目の過去問を1年分、時間を測らず解いてみるのもおすすめです。';
   } else if (ph >= PHASES.length) {
     if(phLabel) phLabel.textContent = '試験期間終了';
     if(phInfo) phInfo.textContent = '🎉 試験お疲れさまでした！合格発表を待ちましょう。';
@@ -1549,6 +1602,8 @@ function renderTodayTasks(elId) {
     if(phInfo) phInfo.textContent = `現在 Phase ${ph+1}「${phase.name}」です。${phase.end.toLocaleDateString('ja-JP',{month:'long',day:'numeric'})}まで。Exit基準：${phase.exit}`;
   }
   el.innerHTML = renderCustomTasksHTML();
+  const histEl = document.getElementById('task-history');
+  if (histEl) histEl.innerHTML = renderTaskHistoryHTML();
 }
 
 function renderCalendar() {
