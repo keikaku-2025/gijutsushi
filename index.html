@@ -373,15 +373,15 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
     <div class="today-card">
       <div class="today-header">
         <div>
-          <div class="today-title" id="today-task-title">今日のタスク</div>
-          <div class="today-phase" id="today-phase-label">— </div>
+          <div class="today-title">今週やること</div>
+          <div class="today-phase" id="dash-phase-label">— </div>
         </div>
         <div style="display:flex;gap:8px;">
-          <button class="log-btn btn-gray btn-sm" onclick="openTaskModal()">＋ タスク追加</button>
+          <button class="log-btn btn-gray btn-sm" onclick="openWeeklyTaskModal()">＋ 今週のタスク追加</button>
           <button class="log-btn" onclick="openModal()">＋ 学習を記録</button>
         </div>
       </div>
-      <div class="task-list" id="today-tasks"></div>
+      <div class="task-list" id="weekly-tasks-list"></div>
     </div>
 
     <div class="section-title">直近30日 カレンダー（月曜始まり）</div>
@@ -391,6 +391,29 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
         <div class="week-day-label">木</div><div class="week-day-label">金</div><div class="week-day-label">土</div><div class="week-day-label">日</div>
       </div>
       <div class="week-grid" id="calendar-grid"></div>
+    </div>
+
+    <div class="section-title">週別 学習時間</div>
+    <div class="card">
+      <div id="weekly-hours-chart"></div>
+    </div>
+
+    <div class="section-title">合格のための最低ライン</div>
+    <div class="card" style="font-size:13px;line-height:2;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div>
+          <div style="color:var(--muted);font-size:11px;margin-bottom:4px;">適性科目</div>
+          <div style="font-family:var(--mono);font-size:20px;color:var(--accent);">15問中<br><span style="font-size:28px;">8</span>問</div>
+        </div>
+        <div>
+          <div style="color:var(--muted);font-size:11px;margin-bottom:4px;">基礎科目</div>
+          <div style="font-family:var(--mono);font-size:20px;color:var(--accent3);">15問中<br><span style="font-size:28px;">8</span>問</div>
+        </div>
+        <div>
+          <div style="color:var(--muted);font-size:11px;margin-bottom:4px;">専門科目（建設）</div>
+          <div style="font-family:var(--mono);font-size:20px;color:var(--accent4);">25問中<br><span style="font-size:28px;">13</span>問</div>
+        </div>
+      </div>
     </div>
 
     <div class="grid-2">
@@ -459,7 +482,10 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
 
     <div class="today-card">
       <div class="today-header">
-        <div class="today-title">本日のタスク</div>
+        <div>
+          <div class="today-title">本日のタスク</div>
+          <div class="today-phase" id="today-phase-label">— </div>
+        </div>
         <div style="display:flex;gap:8px;">
           <button class="log-btn btn-gray btn-sm" onclick="openTaskModal()">＋ タスク追加</button>
           <button class="log-btn" onclick="openModal()">＋ 記録する</button>
@@ -474,24 +500,6 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
     <div class="section-title">今週の達成状況（月曜始まり）</div>
     <div class="card">
       <div id="week-summary"></div>
-    </div>
-
-    <div class="section-title">合格のための最低ライン</div>
-    <div class="card" style="font-size:13px;line-height:2;">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
-        <div>
-          <div style="color:var(--muted);font-size:11px;margin-bottom:4px;">適性科目</div>
-          <div style="font-family:var(--mono);font-size:20px;color:var(--accent);">15問中<br><span style="font-size:28px;">8</span>問</div>
-        </div>
-        <div>
-          <div style="color:var(--muted);font-size:11px;margin-bottom:4px;">基礎科目</div>
-          <div style="font-family:var(--mono);font-size:20px;color:var(--accent3);">15問中<br><span style="font-size:28px;">8</span>問</div>
-        </div>
-        <div>
-          <div style="color:var(--muted);font-size:11px;margin-bottom:4px;">専門科目（建設）</div>
-          <div style="font-family:var(--mono);font-size:20px;color:var(--accent4);">25問中<br><span style="font-size:28px;">13</span>問</div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -782,6 +790,38 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
   </div>
 </div>
 
+<!-- MODAL: 今週やること 追加・編集 -->
+<div class="modal-overlay" id="modal-weekly-task" onclick="closeWeeklyTaskModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title" id="modal-weekly-task-title">今週のタスクを追加</div>
+    <div class="form-group">
+      <label class="form-label">内容</label>
+      <input class="form-input" type="text" id="weekly-task-text" placeholder="例：専門科目（道路）過去問5年分を解く">
+    </div>
+    <div class="form-group">
+      <label class="form-label">分類</label>
+      <div class="cat-picker" id="weekly-task-cat-picker">
+        <button type="button" class="cat-btn" data-cat="基礎" onclick="pickWeeklyCategory('基礎')">基礎</button>
+        <button type="button" class="cat-btn" data-cat="専門" onclick="pickWeeklyCategory('専門')">専門</button>
+        <button type="button" class="cat-btn" data-cat="適性" onclick="pickWeeklyCategory('適性')">適性</button>
+        <button type="button" class="cat-btn" data-cat="その他" onclick="pickWeeklyCategory('その他')">その他</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">期間（開始日〜終了日）</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <input class="form-input" type="date" id="weekly-task-start">
+        <input class="form-input" type="date" id="weekly-task-end">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="log-btn" onclick="saveWeeklyTask()" id="weekly-task-save-btn" style="flex:1;">追加する</button>
+      <button class="log-btn btn-gray" onclick="closeWeeklyTaskModal()">キャンセル</button>
+    </div>
+    <button class="log-btn" id="weekly-task-delete-btn" onclick="deleteFromWeeklyTaskModal()" style="display:none;width:100%;margin-top:10px;border-color:var(--accent4);background:rgba(248,113,113,0.12);color:var(--accent4);">このタスクを削除</button>
+  </div>
+</div>
+
 <!-- MODAL: 学習記録 -->
 <div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
   <div class="modal">
@@ -947,7 +987,8 @@ let state = JSON.parse(localStorage.getItem('gijutsushi-state') || 'null') || {
   weeklyReviews: [],
   biweeklyReviews: [],
   weeklyGoalHours: 20,
-  customTasks: []
+  customTasks: [],
+  weeklyTasks: []
 };
 // 既存データに新フィールドが無い場合の補完（過去バージョンからの移行）
 if(!state.pastExams) state.pastExams = {};
@@ -955,6 +996,7 @@ if(!state.weeklyReviews) state.weeklyReviews = [];
 if(!state.biweeklyReviews) state.biweeklyReviews = [];
 if(!state.weeklyGoalHours) state.weeklyGoalHours = 20;
 if(!state.customTasks) state.customTasks = [];
+if(!state.weeklyTasks) state.weeklyTasks = [];
 // 既存タスクにdateが無い場合は今日の日付を補完（移行）
 // 既存タスクの移行：完了済みタスクは「完了日」を持たせて過去のものとして扱い、今日の欄に復活しないようにする
 state.customTasks.forEach(t=>{
@@ -1079,6 +1121,98 @@ function toggleCustomTask(id) {
     t.doneDate = t.done ? localDateStr(TODAY) : null;
     save(); renderAll();
   }
+}
+
+// ---- 今週やること（期間指定タスク） ----
+let selectedWeeklyCategory = '基礎';
+let editingWeeklyTaskId = null;
+function openWeeklyTaskModal() {
+  editingWeeklyTaskId = null;
+  document.getElementById('modal-weekly-task-title').textContent = '今週のタスクを追加';
+  document.getElementById('weekly-task-text').value = '';
+  pickWeeklyCategory('基礎');
+  const mon = mondayOf(TODAY);
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  document.getElementById('weekly-task-start').value = localDateStr(mon);
+  document.getElementById('weekly-task-end').value = localDateStr(sun);
+  document.getElementById('weekly-task-save-btn').textContent = '追加する';
+  document.getElementById('weekly-task-delete-btn').style.display = 'none';
+  document.getElementById('modal-weekly-task').classList.add('open');
+}
+function openEditWeeklyTaskModal(id) {
+  const t = state.weeklyTasks.find(t=>t.id===id);
+  if (!t) return;
+  editingWeeklyTaskId = id;
+  document.getElementById('modal-weekly-task-title').textContent = '今週のタスクを編集';
+  document.getElementById('weekly-task-text').value = t.text;
+  pickWeeklyCategory(t.category);
+  document.getElementById('weekly-task-start').value = t.startDate;
+  document.getElementById('weekly-task-end').value = t.endDate;
+  document.getElementById('weekly-task-save-btn').textContent = '保存する';
+  document.getElementById('weekly-task-delete-btn').style.display = 'block';
+  document.getElementById('modal-weekly-task').classList.add('open');
+}
+function closeWeeklyTaskModal() { document.getElementById('modal-weekly-task').classList.remove('open'); }
+function closeWeeklyTaskModalOutside(e) { if(e.target===document.getElementById('modal-weekly-task')) closeWeeklyTaskModal(); }
+function pickWeeklyCategory(cat) {
+  selectedWeeklyCategory = cat;
+  document.querySelectorAll('#weekly-task-cat-picker .cat-btn').forEach(b=>{
+    b.classList.toggle('on', b.getAttribute('data-cat')===cat);
+  });
+}
+function saveWeeklyTask() {
+  const text = document.getElementById('weekly-task-text').value.trim();
+  let startDate = document.getElementById('weekly-task-start').value;
+  let endDate = document.getElementById('weekly-task-end').value;
+  if (!text || !startDate || !endDate) return;
+  if (endDate < startDate) { const tmp = startDate; startDate = endDate; endDate = tmp; }
+  if (editingWeeklyTaskId) {
+    const t = state.weeklyTasks.find(t=>t.id===editingWeeklyTaskId);
+    if (t) { t.text = text; t.category = selectedWeeklyCategory; t.startDate = startDate; t.endDate = endDate; }
+    save(); closeWeeklyTaskModal(); renderAll();
+    showToast('今週のタスクを更新しました');
+  } else {
+    state.weeklyTasks.push({ id: Date.now()+'-'+Math.random().toString(36).slice(2,7), text, category: selectedWeeklyCategory, startDate, endDate, done:false, doneDate:null });
+    save(); closeWeeklyTaskModal(); renderAll();
+    showToast('今週のタスクを追加しました');
+  }
+}
+function deleteFromWeeklyTaskModal() {
+  if (!editingWeeklyTaskId) return;
+  state.weeklyTasks = state.weeklyTasks.filter(t=>t.id!==editingWeeklyTaskId);
+  save(); closeWeeklyTaskModal(); renderAll();
+  showToast('今週のタスクを削除しました');
+}
+function toggleWeeklyTask(id) {
+  const t = state.weeklyTasks.find(t=>t.id===id);
+  if (t) {
+    t.done = !t.done;
+    t.doneDate = t.done ? localDateStr(TODAY) : null;
+    save(); renderAll();
+  }
+}
+function renderWeeklyTasksDashboard() {
+  const el = document.getElementById('weekly-tasks-list');
+  if (!el) return;
+  const todayKey = localDateStr(TODAY);
+  const items = state.weeklyTasks.filter(t=> !t.done || t.doneDate===todayKey);
+  items.sort((a,b)=> (a.done===b.done) ? a.startDate.localeCompare(b.startDate) : (a.done ? 1 : -1));
+  if (items.length===0) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0;">「＋ 今週のタスク追加」で今週の目標を登録しよう</div>';
+    return;
+  }
+  el.innerHTML = items.map(t=>{
+    const col = taskCatColor(t.category);
+    const overdue = !t.done && t.endDate && t.endDate<todayKey;
+    return `<div class="task-item${t.done?' done':''}">
+      <div class="task-check" onclick="toggleWeeklyTask('${t.id}')">${t.done?'✓':''}</div>
+      <div class="task-content" onclick="toggleWeeklyTask('${t.id}')">
+        <div class="task-item-row"><div class="task-name">${escapeHtml(t.text)}</div></div>
+        <div class="task-meta"><span class="task-cat-badge" style="background:${col.bg};color:${col.c}">${t.category}</span> <span style="color:${overdue?'var(--accent4)':'var(--dimmed)'};">・${fmtMD(new Date(t.startDate+'T00:00:00'))}〜${fmtMD(new Date(t.endDate+'T00:00:00'))}${overdue?'（期限超過）':''}</span></div>
+      </div>
+      <button class="task-del" onclick="event.stopPropagation();openEditWeeklyTaskModal('${t.id}')" title="編集">✎</button>
+    </div>`;
+  }).join('');
 }
 
 // ---- date helpers (月曜始まり) ----
@@ -1524,15 +1658,19 @@ function renderDashboard() {
 
   document.getElementById('goal-hours-display').textContent = state.weeklyGoalHours+'h / 週';
 
-  renderTodayTasks('today-tasks');
+  renderWeeklyTasksDashboard();
   renderCalendar();
   renderPhaseBadges();
+  renderWeeklyHoursChart();
 }
 
 function renderCustomTasksHTML() {
   const todayKey = localDateStr(TODAY);
   // 未完了のタスクは作成日に関わらず継続表示。完了したタスクは完了した当日のみ表示し、翌日には履歴へ移動する
-  const todays = state.customTasks.filter(t=> !t.done || t.doneDate===todayKey);
+  const daily = state.customTasks.filter(t=> !t.done || t.doneDate===todayKey).map(t=>({...t, kind:'daily'}));
+  // 今週やること：開始日が今日以前で、まだ未完了（または今日完了）のものを「今日のタスク」に合流させる
+  const weekly = state.weeklyTasks.filter(t=> t.startDate<=todayKey && (!t.done || t.doneDate===todayKey)).map(t=>({...t, kind:'weekly'}));
+  const todays = [...weekly, ...daily];
   // 未完了を先に、完了済み（今日中）を後ろに並べる
   todays.sort((a,b)=> (a.done===b.done) ? 0 : (a.done ? 1 : -1));
   if (todays.length===0) {
@@ -1540,16 +1678,25 @@ function renderCustomTasksHTML() {
   }
   return todays.map(t=>{
     const col = taskCatColor(t.category);
-    const carriedOver = !t.done && t.date && t.date!==todayKey;
+    const toggleFn = t.kind==='weekly' ? `toggleWeeklyTask('${t.id}')` : `toggleCustomTask('${t.id}')`;
+    const editFn = t.kind==='weekly' ? `openEditWeeklyTaskModal('${t.id}')` : `openEditTaskModal('${t.id}')`;
+    let metaExtra = '';
+    if (t.kind==='weekly') {
+      const overdue = !t.done && t.endDate && t.endDate<todayKey;
+      metaExtra = ` <span style="color:${overdue?'var(--accent4)':'var(--dimmed)'};">・今週やること ${fmtMD(new Date(t.startDate+'T00:00:00'))}〜${fmtMD(new Date(t.endDate+'T00:00:00'))}${overdue?'（期限超過）':''}</span>`;
+    } else {
+      const carriedOver = !t.done && t.date && t.date!==todayKey;
+      if (carriedOver) metaExtra = ` <span style="color:var(--dimmed);">・${fmtMD(new Date(t.date+'T00:00:00'))}から未完了</span>`;
+    }
     return `<div class="task-item${t.done?' done':''}">
-      <div class="task-check" onclick="toggleCustomTask('${t.id}')">${t.done?'✓':''}</div>
-      <div class="task-content" onclick="toggleCustomTask('${t.id}')">
+      <div class="task-check" onclick="${toggleFn}">${t.done?'✓':''}</div>
+      <div class="task-content" onclick="${toggleFn}">
         <div class="task-item-row">
           <div class="task-name">${escapeHtml(t.text)}</div>
         </div>
-        <div class="task-meta"><span class="task-cat-badge" style="background:${col.bg};color:${col.c}">${t.category}</span>${carriedOver?` <span style="color:var(--dimmed);">・${fmtMD(new Date(t.date+'T00:00:00'))}から未完了</span>`:''}</div>
+        <div class="task-meta"><span class="task-cat-badge" style="background:${col.bg};color:${col.c}">${t.category}</span>${metaExtra}</div>
       </div>
-      <button class="task-del" onclick="event.stopPropagation();openEditTaskModal('${t.id}')" title="編集">✎</button>
+      <button class="task-del" onclick="event.stopPropagation();${editFn}" title="編集">✎</button>
     </div>`;
   }).join('');
 }
@@ -1592,18 +1739,23 @@ function renderTodayTasks(elId) {
   const ph = getCurrentPhase();
   const el = document.getElementById(elId);
   const phLabel = document.getElementById('today-phase-label');
+  const dashPhLabel = document.getElementById('dash-phase-label');
   const phInfo = document.getElementById('today-phase-info');
+  let labelText, infoText;
   if (ph < 0) {
-    if(phLabel) phLabel.textContent = '〜 7月21日のPhase1開始まで準備期間';
-    if(phInfo) phInfo.textContent = '📋 参考書を1冊決めて、試験の全体像をつかんでおく準備期間です。適性科目の過去問を1年分、時間を測らず解いてみるのもおすすめです。';
+    labelText = '〜 7月21日のPhase1開始まで準備期間';
+    infoText = '📋 参考書を1冊決めて、試験の全体像をつかんでおく準備期間です。適性科目の過去問を1年分、時間を測らず解いてみるのもおすすめです。';
   } else if (ph >= PHASES.length) {
-    if(phLabel) phLabel.textContent = '試験期間終了';
-    if(phInfo) phInfo.textContent = '🎉 試験お疲れさまでした！合格発表を待ちましょう。';
+    labelText = '試験期間終了';
+    infoText = '🎉 試験お疲れさまでした！合格発表を待ちましょう。';
   } else {
     const phase = PHASES[ph];
-    if(phLabel) phLabel.textContent = `Phase ${ph+1} — ${phase.name}`;
-    if(phInfo) phInfo.textContent = `現在 Phase ${ph+1}「${phase.name}」です。${phase.end.toLocaleDateString('ja-JP',{month:'long',day:'numeric'})}まで。Exit基準：${phase.exit}`;
+    labelText = `Phase ${ph+1} — ${phase.name}`;
+    infoText = `現在 Phase ${ph+1}「${phase.name}」です。${phase.end.toLocaleDateString('ja-JP',{month:'long',day:'numeric'})}まで。Exit基準：${phase.exit}`;
   }
+  if (phLabel) phLabel.textContent = labelText;
+  if (dashPhLabel) dashPhLabel.textContent = labelText;
+  if (phInfo) phInfo.textContent = infoText;
   el.innerHTML = renderCustomTasksHTML();
   const histEl = document.getElementById('task-history');
   if (histEl) histEl.innerHTML = renderTaskHistoryHTML();
@@ -1626,6 +1778,32 @@ function renderCalendar() {
     html+=`<div class="week-cell${studied?' studied':''}${isToday?' today':''}" title="${key}">${label}</div>`;
   });
   grid.innerHTML = html;
+}
+
+function renderWeeklyHoursChart() {
+  const el = document.getElementById('weekly-hours-chart');
+  if (!el) return;
+  const thisMonday = mondayOf(TODAY);
+  const weeks = [];
+  for (let i=7; i>=0; i--) {
+    const mon = new Date(thisMonday); mon.setDate(thisMonday.getDate()-i*7);
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    const monKey = localDateStr(mon), sunKey = localDateStr(sun);
+    const mins = state.logs.filter(l=> l.date>=monKey && l.date<=sunKey).reduce((s,l)=>s+l.mins,0);
+    weeks.push({ mon, hours: mins/60, isThis: i===0 });
+  }
+  const maxH = Math.max(...weeks.map(w=>w.hours), state.weeklyGoalHours, 1);
+  el.innerHTML = `<div style="display:flex;align-items:flex-end;gap:8px;height:150px;padding:6px 2px 0;">` +
+    weeks.map(w=>{
+      const barH = Math.max(2, Math.round(w.hours/maxH*120));
+      const color = w.hours>=state.weeklyGoalHours ? 'var(--accent)' : (w.isThis ? 'var(--accent2)' : 'var(--accent3)');
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="font-size:10px;color:var(--muted);font-family:var(--mono);">${w.hours>0?w.hours.toFixed(1):''}</div>
+        <div style="width:100%;max-width:28px;height:${barH}px;border-radius:4px 4px 0 0;background:${color};"></div>
+        <div style="font-size:9.5px;color:${w.isThis?'var(--accent2)':'var(--dimmed)'};font-family:var(--mono);white-space:nowrap;">${fmtMD(w.mon)}</div>
+      </div>`;
+    }).join('') +
+    `</div><div style="font-size:11px;color:var(--muted);margin-top:10px;">週目標 ${state.weeklyGoalHours}h／週　🟢達成　🔵今週　🟡未達</div>`;
 }
 
 function renderPhaseBadges() {
