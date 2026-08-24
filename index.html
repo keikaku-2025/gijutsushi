@@ -193,6 +193,27 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 
 /* past exam matrix */
 .exam-table-wrap { overflow-x: auto; }
+
+/* weekly task gantt chart */
+.gantt-week-label { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+.gantt-nav-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); font-size: 13px; cursor: pointer; }
+.gantt-nav-btn.gantt-nav-today { width: auto; padding: 0 10px; border-color: rgba(110,231,183,0.3); background: var(--accent-dim); color: var(--accent); font-size: 11px; }
+.gantt-scroll-hint { font-size: 10px; color: var(--dimmed); margin-bottom: 6px; }
+.gantt-scroll-wrap { overflow-x: auto; }
+.gantt-inner { min-width: 560px; }
+.gantt-days { display: grid; grid-template-columns: repeat(7,1fr); gap: 0; margin-bottom: 6px; }
+.gantt-day { text-align: center; font-size: 10px; color: var(--dimmed); }
+.gantt-day.gantt-today-col { color: var(--accent2); font-weight: 700; }
+.gantt-rows { position: relative; }
+.gantt-today-line { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed var(--accent2); z-index: 2; }
+.gantt-row { position: relative; height: 32px; }
+.gantt-bar { position: absolute; top: 4px; height: 22px; border-radius: 6px; display: flex; align-items: center; padding: 0 8px; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.gantt-bar.gantt-done { opacity: 0.4; }
+.gantt-empty { color: var(--muted); font-size: 12.5px; padding: 12px 2px; }
+.gantt-list-toggle { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+.gantt-list-toggle summary { font-size: 11px; color: var(--muted); cursor: pointer; list-style: none; display: flex; align-items: center; gap: 5px; }
+.gantt-list-toggle summary::-webkit-details-marker { display: none; }
+.gantt-list-toggle[open] .chevron { transform: rotate(90deg); }
 table.exam-table { width: 100%; min-width: 980px; border-collapse: collapse; font-size: 12px; }
 table.exam-table th, table.exam-table td { padding: 8px 7px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; }
 table.exam-table th { color: var(--dimmed); font-weight: 500; background: var(--surface2); font-size: 10.5px; letter-spacing: 0.02em; }
@@ -381,7 +402,24 @@ table.exam-table tr.total-row td { font-weight: 700; border-top: 1px solid var(-
           <button class="log-btn" onclick="openModal()">＋ 学習を記録</button>
         </div>
       </div>
-      <div class="task-list" id="weekly-tasks-list"></div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="gantt-week-label" id="gantt-week-label">—</div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <button class="gantt-nav-btn" onclick="shiftGanttWeek(-1)">‹</button>
+          <button class="gantt-nav-btn gantt-nav-today" onclick="resetGanttWeek()" id="gantt-today-btn">今週</button>
+          <button class="gantt-nav-btn" onclick="shiftGanttWeek(1)">›</button>
+        </div>
+      </div>
+      <div class="gantt-scroll-hint">横にスクロールできます →</div>
+      <div class="gantt-scroll-wrap">
+        <div class="gantt-inner" id="gantt-chart"></div>
+      </div>
+
+      <details class="gantt-list-toggle" id="gantt-list-details">
+        <summary><span class="chevron">▸</span>リスト表示に切り替える</summary>
+        <div class="task-list" id="weekly-tasks-list" style="margin-top:10px;"></div>
+      </details>
     </div>
 
     <div class="section-title">直近30日 カレンダー（月曜始まり）</div>
@@ -1191,7 +1229,63 @@ function toggleWeeklyTask(id) {
     save(); renderAll();
   }
 }
+let ganttWeekOffset = 0;
+function shiftGanttWeek(delta) { ganttWeekOffset += delta; renderWeeklyTasksDashboard(); }
+function resetGanttWeek() { ganttWeekOffset = 0; renderWeeklyTasksDashboard(); }
+
+function renderGanttChart(weekMonday) {
+  const chart = document.getElementById('gantt-chart');
+  if (!chart) return;
+  const dayLabels = ['月','火','水','木','金','土','日'];
+  const todayKey = localDateStr(TODAY);
+  const weekMonKey = localDateStr(weekMonday);
+  const weekSun = new Date(weekMonday); weekSun.setDate(weekMonday.getDate()+6);
+  const weekSunKey = localDateStr(weekSun);
+  const showTodayLine = todayKey>=weekMonKey && todayKey<=weekSunKey;
+  const todayIdx = Math.round((new Date(todayKey+'T00:00:00') - new Date(weekMonKey+'T00:00:00'))/86400000);
+
+  let daysHtml = '<div class="gantt-days">';
+  for (let i=0;i<7;i++) {
+    const d = new Date(weekMonday); d.setDate(weekMonday.getDate()+i);
+    const isToday = localDateStr(d)===todayKey;
+    daysHtml += `<div class="gantt-day${isToday?' gantt-today-col':''}">${dayLabels[i]}</div>`;
+  }
+  daysHtml += '</div>';
+
+  const tasks = state.weeklyTasks.filter(t=> t.startDate<=weekSunKey && t.endDate>=weekMonKey);
+  tasks.sort((a,b)=>a.startDate.localeCompare(b.startDate));
+
+  let rowsHtml = '<div class="gantt-rows">';
+  if (showTodayLine) rowsHtml += `<div class="gantt-today-line" style="left:calc(${todayIdx}/7*100%)"></div>`;
+  if (tasks.length===0) {
+    rowsHtml += '<div class="gantt-empty">この週のタスクはありません</div>';
+  } else {
+    tasks.forEach(t=>{
+      const clampStart = t.startDate<weekMonKey ? weekMonKey : t.startDate;
+      const clampEnd = t.endDate>weekSunKey ? weekSunKey : t.endDate;
+      const startIdx = Math.round((new Date(clampStart+'T00:00:00') - new Date(weekMonKey+'T00:00:00'))/86400000);
+      const endIdx = Math.round((new Date(clampEnd+'T00:00:00') - new Date(weekMonKey+'T00:00:00'))/86400000);
+      const span = endIdx-startIdx+1;
+      const col = taskCatColor(t.category);
+      const label = (t.done?'✓ ':'') + escapeHtml(t.text);
+      rowsHtml += `<div class="gantt-row"><div class="gantt-bar${t.done?' gantt-done':''}" style="left:calc(${startIdx}/7*100%);width:calc(${span}/7*100%);background:${col.bg};border:1px solid ${col.c};color:${col.c};" onclick="openEditWeeklyTaskModal('${t.id}')">${label}</div></div>`;
+    });
+  }
+  rowsHtml += '</div>';
+  chart.innerHTML = daysHtml + rowsHtml;
+}
+
 function renderWeeklyTasksDashboard() {
+  const weekMonday = mondayOf(TODAY);
+  weekMonday.setDate(weekMonday.getDate() + ganttWeekOffset*7);
+  const weekSun = new Date(weekMonday); weekSun.setDate(weekMonday.getDate()+6);
+  const labelEl = document.getElementById('gantt-week-label');
+  if (labelEl) labelEl.textContent = `${fmtMD(weekMonday)}(月)〜${fmtMD(weekSun)}(日)`;
+  const todayBtn = document.getElementById('gantt-today-btn');
+  if (todayBtn) todayBtn.textContent = ganttWeekOffset===0 ? '今週' : (ganttWeekOffset>0 ? `+${ganttWeekOffset}週` : `${ganttWeekOffset}週`);
+  renderGanttChart(weekMonday);
+
+  // リスト表示（折りたたみ）：未完了、または今日完了したタスクを一覧表示
   const el = document.getElementById('weekly-tasks-list');
   if (!el) return;
   const todayKey = localDateStr(TODAY);
